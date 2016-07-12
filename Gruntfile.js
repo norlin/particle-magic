@@ -16,7 +16,8 @@ grunt.initConfig({
 	copy: {
 		html: {
 			files: {
-				"build/client/index.html": "src/client/index.html"
+				"build/client/index.html": "src/client/index.html",
+				"build/client/js/fabric.js": "node_modules/fabric/dist/fabric.js"
 			}
 		}
 	},
@@ -34,6 +35,29 @@ grunt.initConfig({
 			]
 		}
 	},
+	watch: {
+		js: {
+			files: ['src/client/js/*.js'],
+			tasks: ['browserify:client'],
+			options: {
+				spawn: false,
+			},
+		},
+		css: {
+			files: ['src/client/css/*.less'],
+			tasks: ['less:client'],
+			options: {
+				spawn: false,
+			},
+		},
+		html: {
+			files: ['src/client/*.html'],
+			tasks: ['copy:html'],
+			options: {
+				spawn: false,
+			},
+		},
+	},
 	clean: ['build'],
 });
 
@@ -47,6 +71,6 @@ grunt.registerTask("build", [
 ]);
 
 // Default task
-grunt.registerTask("default", ["build:client"]);
+grunt.registerTask("default", ["build", "watch"]);
 
 };
