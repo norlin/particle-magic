@@ -6,18 +6,31 @@ grunt.initConfig({
 	browserify: {
 		client: {
 			options: {
-				transform: [["babelify", {presets: ["es2015"]}]]
+				browserifyOptions: {
+					debug: true
+				},
+				transform: [['babelify', {presets: ['es2015']}]]
 			},
 			files: {
-				"build/client/js/main.js": "src/client/js/main.js"
+				'build/client/js/main.js': 'src/client/js/main.js'
+			}
+		}
+	},
+	exorcise: {
+		client: {
+			options: {
+				strict: true
+			},
+			files: {
+				'build/client/js/main.map': ['build/client/js/main.js'],
 			}
 		}
 	},
 	copy: {
 		html: {
 			files: {
-				"build/client/index.html": "src/client/index.html",
-				"build/client/js/fabric.js": "node_modules/fabric/dist/fabric.js"
+				'build/client/index.html': 'src/client/index.html',
+				'build/client/js/fabric.js': 'node_modules/fabric/dist/fabric.js'
 			}
 		}
 	},
@@ -61,16 +74,17 @@ grunt.initConfig({
 	clean: ['build'],
 });
 
-require("load-grunt-tasks")(grunt);
+require('load-grunt-tasks')(grunt);
 
-grunt.registerTask("build", [
-	"clean",
-	"browserify",
-	"less",
-	"copy"
+grunt.registerTask('build', [
+	'clean',
+	'browserify',
+	'exorcise',
+	'less',
+	'copy'
 ]);
 
 // Default task
-grunt.registerTask("default", ["build", "watch"]);
+grunt.registerTask('default', ['build', 'watch']);
 
 };

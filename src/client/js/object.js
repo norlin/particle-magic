@@ -1,11 +1,19 @@
-class GObject {
+import EventEmitter from 'events';
+
+class GObject extends EventEmitter {
 	constructor(game, options) {
+		super();
+
 		this.id = 'uuid_'+Math.random();
 
-		this.game = game;
+		if (game) {
+			this.game = game;
+		}
 
-		this.options = Object.assign({}, this.defaults, options);
+		this.options = Object.assign({}, this.options, options);
 	}
+
+	tick() {}
 }
 
 export default GObject;

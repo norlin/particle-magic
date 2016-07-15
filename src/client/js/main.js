@@ -6,7 +6,8 @@ class App {
 		let game = new Game({canvas: 'canvas'});
 		let player = new GPlayer(game, {name: 'test', color: '#f00'});
 
-		game.add(player);
+		game.addPlayer(player);
+		game.start();
 	}
 }
 
