@@ -7,13 +7,39 @@ grunt.initConfig({
 		client: {
 			options: {
 				browserifyOptions: {
-					debug: true
+					debug: true,
+					paths: ['./src']
 				},
 				transform: [['babelify', {presets: ['es2015']}]]
 			},
 			files: {
 				'build/client/js/main.js': 'src/client/js/main.js'
 			}
+		},
+	},
+	babel: {
+		server: {
+			options: {
+				presets: ['es2015'],
+				sourceRoot: './src'
+			},
+			files: [
+				{
+					expand: true,
+					cwd: 'src/',
+					src: [
+						'common/*.js',
+						'server/*.js',
+					],
+					dest: 'build/'
+				},
+				{
+					expand: true,
+					cwd: './',
+					src: ['index.js'],
+					dest: 'build/'
+				}
+			]
 		}
 	},
 	exorcise: {
@@ -49,9 +75,23 @@ grunt.initConfig({
 		}
 	},
 	watch: {
-		js: {
-			files: ['src/client/js/*.js'],
+		js_client: {
+			files: [
+				'src/client/js/*.js',
+				'src/common/*.js'
+			],
 			tasks: ['browserify:client'],
+			options: {
+				spawn: false,
+			},
+		},
+		js_server: {
+			files: [
+				'src/server/*.js',
+				'src/common/*.js',
+				'./index.js'
+			],
+			tasks: ['babel:server'],
 			options: {
 				spawn: false,
 			},
@@ -78,7 +118,8 @@ require('load-grunt-tasks')(grunt);
 
 grunt.registerTask('build', [
 	'clean',
-	'browserify',
+	'babel:server',
+	'browserify:client',
 	'exorcise',
 	'less',
 	'copy'

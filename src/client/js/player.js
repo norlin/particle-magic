@@ -1,15 +1,14 @@
 import 'fabric'
-import Log from './log'
+import Log from 'common/log'
 import GElement from './element'
 import Keys from './keys'
 import Utils from './utils'
 
+let log = new Log('Player');
+
 class GPlayer extends GElement {
 	constructor(game, options) {
 		super(game, options);
-
-		let log = new Log('Player');
-		this.log = log.log.bind(log);
 
 		this.addListeners();
 	}
@@ -101,7 +100,7 @@ class GPlayer extends GElement {
 			return;
 		}
 
-		this.log('stopMovement');
+		log.info('stopMovement');
 
 		this.target.x = this._position.x;
 		this.target.y = this._position.y;

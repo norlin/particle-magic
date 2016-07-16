@@ -1,4 +1,3 @@
-//import 'fabric'
 import GObject from './object.js'
 
 class GElement extends GObject {

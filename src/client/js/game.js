@@ -1,7 +1,10 @@
 //import 'fabric'
-import Log from './log'
+import Log from 'common/log'
 import GObject from './object.js'
 import Keys from './keys'
+import Socket from './connection'
+
+let log = new Log('Game');
 
 class Game extends GObject {
 	constructor(options) {
@@ -9,8 +12,6 @@ class Game extends GObject {
 		options.screenHeight = options.screenHeight || document.body.offsetHeight;
 
 		super(null, options)
-		let log = new Log('Game');
-		this.log = log.log.bind(log);
 
 		this.objects = {};
 
@@ -23,6 +24,8 @@ class Game extends GObject {
 				this.start();
 			}
 		}, true);
+
+		this.connect();
 	}
 
 	initCanvas() {
@@ -38,8 +41,12 @@ class Game extends GObject {
 		this.canvas = new fabric.StaticCanvas(this.options.canvas);
 		this.canvas.setBackgroundColor('#fff');
 
-		document.body.addEventListener('keydown', this.onKeyDown.bind(this), true);
-		document.body.addEventListener('click', this.onClick.bind(this), true);
+		document.body.addEventListener('keydown', (e)=>this.onKeyDown(e), true);
+		document.body.addEventListener('click', (e)=>this.onClick(e), true);
+	}
+
+	connect() {
+		this.socket = Socket(this);
 	}
 
 	add(object) {
@@ -48,11 +55,11 @@ class Game extends GObject {
 		}
 
 		if (this.objects[object.id]) {
-			this.log('object already in the game');
+			log.debug('object already in the game');
 			return false;
 		}
 
-		this.log('adding object...', object.el);
+		log.debug('adding object...', object.el);
 		this.objects[object.id] = object;
 		this.canvas.add(object.el);
 
@@ -121,7 +128,7 @@ class Game extends GObject {
 			throw "No player found!"
 		}
 
-		this.tickTimer = window.setInterval(this.tick.bind(this), 1000 / this.options.fps);
+		this.tickTimer = window.setInterval(()=>this.tick(), 1000 / this.options.fps);
 	}
 
 	stop() {
@@ -178,7 +185,6 @@ class Game extends GObject {
 
 		let lines = [];
 		let init = {x: -0 -playerPos.x, y: -0 -playerPos.y};
-		//console.log(init);
 
 		for (let x = init.x; x < screenWidth; x += horizontalStep) {
 			lines.push(new fabric.Line([x, 0, x, screenHeight], lineOptions));
