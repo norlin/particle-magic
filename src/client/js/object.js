@@ -12,8 +12,6 @@ class GObject extends EventEmitter {
 
 		this.options = Object.assign({}, this.options, options);
 	}
-
-	tick() {}
 }
 
 export default GObject;

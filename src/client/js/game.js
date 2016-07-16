@@ -39,6 +39,7 @@ class Game extends GObject {
 		this.canvas.setBackgroundColor('#fff');
 
 		document.body.addEventListener('keydown', this.onKeyDown.bind(this), true);
+		document.body.addEventListener('click', this.onClick.bind(this), true);
 	}
 
 	add(object) {
@@ -73,9 +74,42 @@ class Game extends GObject {
 		}
 	}
 
+	onClick(mouse) {
+		let point = {
+			x: mouse.clientX - this.options.screenWidth / 2,
+			y: mouse.clientY - this.options.screenHeight / 2
+		};
+
+		this.emit(`click.global`, point);
+
+		if (this.tickTimer) {
+			this.emit(`click`, point);
+		}
+
+		let pos = this.player && this.player.pos();
+
+		if (!pos || !this.tickTimer) {
+			return;
+		}
+
+		let gamePoint = {
+			x: pos.x + point.x,
+			y: pos.y + point.y
+		};
+
+		this.emit(`gameClick`, gamePoint);
+	}
+
 	addKeyListener(key, handler, global) {
 		let isGlobal = global ? '.global' : '';
 		this.on(`keydown.${key}${isGlobal}`, handler);
+	}
+
+	addClickListener(handler, inGame, global) {
+		let event = inGame ? 'gameClick' : 'click';
+		let isGlobal = global ? '.global' : '';
+
+		this.on(`${event}${isGlobal}`, handler);
 	}
 
 	start() {
@@ -108,19 +142,23 @@ class Game extends GObject {
 		for (let id in this.objects) {
 			let object = this.objects[id];
 
-			object.tick();
+			if (object.tick) {
+				object.tick();
+			}
 		}
 
 		this.drawGrid();
 		this.drawBorder();
-		this.drawObject(this.player);
-
+		this.drawObject(this.player.el);
+		if (this.player.target && this.player.target.mark) {
+			this.drawObject(this.player.target.mark);
+		}
 
 		this.canvas.renderAll();
 	}
 
-	drawObject(object) {
-		this.canvas.add(object.el);
+	drawObject(el) {
+		this.canvas.add(el);
 	}
 
 	drawGrid() {
@@ -162,12 +200,11 @@ class Game extends GObject {
 			selectable: false
 		};
 
-		let lines = [];
+		let borders = [];
 
-		// Left-vertical.
+		// Left
 		if (player.x <= options.screenWidth/2) {
-			console.log('left-vertical');
-			lines.push(new fabric.Line([
+			borders.push(new fabric.Line([
 				options.screenWidth/2 - player.x,
 				options.screenHeight/2 - player.y,
 				options.screenWidth/2 - player.x,
@@ -175,10 +212,9 @@ class Game extends GObject {
 			], lineOptions))
 		}
 
-		// Top-horizontal.
+		// Top
 		if (player.y <= options.screenHeight/2) {
-			console.log('top-horizontal');
-			lines.push(new fabric.Line([
+			borders.push(new fabric.Line([
 				options.screenWidth/2 - player.x,
 				options.screenHeight/2 - player.y,
 				options.width + options.screenWidth/2 - player.x,
@@ -186,10 +222,9 @@ class Game extends GObject {
 			], lineOptions))
 		}
 
-		// Right-vertical.
+		// Right
 		if (options.width - player.x <= options.screenWidth/2) {
-			console.log('Right-vertical');
-			lines.push(new fabric.Line([
+			borders.push(new fabric.Line([
 				options.width + options.screenWidth/2 - player.x,
 				options.screenHeight/2 - player.y,
 				options.width + options.screenWidth/2 - player.x,
@@ -197,10 +232,9 @@ class Game extends GObject {
 			], lineOptions))
 		}
 
-		// Bottom-horizontal.
+		// Bottom
 		if (options.height - player.y <= options.screenHeight/2) {
-			console.log('Bottom-horizontal');
-			lines.push(new fabric.Line([
+			borders.push(new fabric.Line([
 				options.width + options.screenWidth/2 - player.x,
 				options.height + options.screenHeight/2 - player.y,
 				options.screenWidth/2 - player.x,
@@ -208,7 +242,7 @@ class Game extends GObject {
 			], lineOptions))
 		}
 
-		this.canvas.add.apply(this.canvas, lines);
+		this.canvas.add.apply(this.canvas, borders);
 	}
 }
 
