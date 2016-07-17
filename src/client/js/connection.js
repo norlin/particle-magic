@@ -1,16 +1,17 @@
 import Log from 'common/log'
-import GObject from './object.js'
 import { connect as io } from 'socket.io-client'
 
 let log = new Log('Socket');
 
-log.debug('socket', io);
-
-class Client extends GObject {
-	constructor(game, options) {
-		super(game, options);
+class Client {
+	constructor(options) {
+		this.options = Object.assign({}, options);
 
 		this.socket = io({query:'type=player'});
+
+		this.on = this.socket.on.bind(this.socket);
+		this.emit = this.socket.emit.bind(this.socket);
+		this.off = this.socket.off.bind(this.socket);
 	}
 }
 

@@ -3,6 +3,7 @@ import Log from 'common/log'
 import GObject from './object.js'
 import Keys from './keys'
 import Socket from './connection'
+import GPlayer from './player'
 
 let log = new Log('Game');
 
@@ -14,8 +15,15 @@ class Game extends GObject {
 		super(null, options)
 
 		this.objects = {};
-
 		this.initCanvas();
+
+		this.connect();
+	}
+
+	init(config) {
+		this.config = config;
+
+		log.debug(config);
 
 		this.addKeyListener(Keys.ENTER, () => {
 			if (this.tickTimer) {
@@ -25,15 +33,16 @@ class Game extends GObject {
 			}
 		}, true);
 
-		this.connect();
+		this.start();
 	}
 
 	initCanvas() {
 		let el = document.getElementById(this.options.canvas);
 
 		if (!el) {
-			throw "No canvas found!"
+			throw 'No canvas found!';
 		}
+
 
 		el.width = this.options.screenWidth;
 		el.height = this.options.screenHeight;
@@ -46,7 +55,9 @@ class Game extends GObject {
 	}
 
 	connect() {
-		this.socket = Socket(this);
+		this.connection = Socket();
+		this.socket = this.connection.socket;
+		this.socket.on('config', (config)=>this.init(config));
 	}
 
 	add(object) {
@@ -120,15 +131,20 @@ class Game extends GObject {
 	}
 
 	start() {
+		let config = this.config
+		if (!config) {
+			throw 'No config loaded!';
+		}
+
 		if (this.tickTimer) {
 			return;
 		}
 
 		if (!this.player) {
-			throw "No player found!"
+			this.addPlayer(new GPlayer(this, {name: 'test', color: '#f00'}));
 		}
 
-		this.tickTimer = window.setInterval(()=>this.tick(), 1000 / this.options.fps);
+		this.tickTimer = window.setInterval(()=>this.tick(), 1000 / this.config.fps);
 	}
 
 	stop() {
@@ -169,17 +185,17 @@ class Game extends GObject {
 	}
 
 	drawGrid() {
-		let size = this.options.gridSize || 25;
+		let size = this.options.gridSize || 100;
 		let screenWidth = this.options.screenWidth;
 		let screenHeight = this.options.screenHeight;
 
-		let horizontalStep = screenWidth / size;
-		let verticalStep = screenHeight / size;
+		let horizontalStep = size;
+		let verticalStep = size;
 
 		let playerPos = this.player.pos();
 
 		let lineOptions = {
-			stroke: this.options.borderColor,
+			stroke: this.config.borderColor,
 			selectable: false
 		};
 
@@ -200,6 +216,7 @@ class Game extends GObject {
 	drawBorder() {
 		let player = this.player.pos();
 		let options = this.options;
+		let config = this.config;
 
 		let lineOptions = {
 			stroke: '#000',
@@ -214,7 +231,7 @@ class Game extends GObject {
 				options.screenWidth/2 - player.x,
 				options.screenHeight/2 - player.y,
 				options.screenWidth/2 - player.x,
-				options.height + options.screenHeight/2 - player.y
+				config.height + options.screenHeight/2 - player.y
 			], lineOptions))
 		}
 
@@ -223,7 +240,7 @@ class Game extends GObject {
 			borders.push(new fabric.Line([
 				options.screenWidth/2 - player.x,
 				options.screenHeight/2 - player.y,
-				options.width + options.screenWidth/2 - player.x,
+				config.width + options.screenWidth/2 - player.x,
 				options.screenHeight/2 - player.y
 			], lineOptions))
 		}
@@ -231,32 +248,25 @@ class Game extends GObject {
 		// Right
 		if (options.width - player.x <= options.screenWidth/2) {
 			borders.push(new fabric.Line([
-				options.width + options.screenWidth/2 - player.x,
+				config.width + options.screenWidth/2 - player.x,
 				options.screenHeight/2 - player.y,
-				options.width + options.screenWidth/2 - player.x,
-				options.height + options.screenHeight/2 - player.y
+				config.width + options.screenWidth/2 - player.x,
+				config.height + options.screenHeight/2 - player.y
 			], lineOptions))
 		}
 
 		// Bottom
 		if (options.height - player.y <= options.screenHeight/2) {
 			borders.push(new fabric.Line([
-				options.width + options.screenWidth/2 - player.x,
-				options.height + options.screenHeight/2 - player.y,
+				config.width + options.screenWidth/2 - player.x,
+				config.height + options.screenHeight/2 - player.y,
 				options.screenWidth/2 - player.x,
-				options.height + options.screenHeight/2 - player.y
+				config.height + options.screenHeight/2 - player.y
 			], lineOptions))
 		}
 
 		this.canvas.add.apply(this.canvas, borders);
 	}
 }
-
-Game.prototype.options = {
-	fps: 60,
-	width: 5000,
-	height: 5000,
-	borderColor: '#ccc'
-};
 
 export default Game;

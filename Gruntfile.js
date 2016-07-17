@@ -36,7 +36,10 @@ grunt.initConfig({
 				{
 					expand: true,
 					cwd: './',
-					src: ['index.js'],
+					src: [
+						'index.js',
+						'config.js'
+					],
 					dest: 'build/'
 				}
 			]
@@ -89,7 +92,8 @@ grunt.initConfig({
 			files: [
 				'src/server/*.js',
 				'src/common/*.js',
-				'./index.js'
+				'./index.js',
+				'./config.js'
 			],
 			tasks: ['babel:server'],
 			options: {
