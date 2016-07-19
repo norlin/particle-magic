@@ -1,9 +1,8 @@
-//import 'fabric'
-import Log from 'common/log'
-import GObject from './object.js'
-import Keys from './keys'
-import Socket from './connection'
-import GPlayer from './player'
+import Log from 'common/log';
+import GObject from 'common/object.js';
+import Keys from './keys';
+import Socket from './connection';
+import GPlayer from './player';
 
 let log = new Log('Game');
 
@@ -12,7 +11,7 @@ class Game extends GObject {
 		options.screenWidth = options.screenWidth || document.body.offsetWidth;
 		options.screenHeight = options.screenHeight || document.body.offsetHeight;
 
-		super(null, options)
+		super(null, options);
 
 		this.objects = {};
 		this.initCanvas();
@@ -43,7 +42,6 @@ class Game extends GObject {
 			throw 'No canvas found!';
 		}
 
-
 		el.width = this.options.screenWidth;
 		el.height = this.options.screenHeight;
 
@@ -52,17 +50,43 @@ class Game extends GObject {
 
 		document.body.addEventListener('keydown', (e)=>this.onKeyDown(e), true);
 		document.body.addEventListener('click', (e)=>this.onClick(e), true);
+
+		window.addEventListener('resize', (e)=>{
+			this.options.screenWidth = document.body.offsetWidth;
+			this.options.screenHeight = document.body.offsetHeight;
+
+			document.getElementById(this.options.canvas);
+			el.width = this.options.screenWidth;
+			el.height = this.options.screenHeight;
+
+			this.canvas.setWidth(this.options.screenWidth);
+			this.canvas.setHeight(this.options.screenHeight);
+			this.canvas.calcOffset();
+		});
 	}
 
 	connect() {
 		this.connection = Socket();
 		this.socket = this.connection.socket;
 		this.socket.on('config', (config)=>this.init(config));
+
+		this.socket.on('createPlayer', (data)=>{
+			if (this.player) {
+				return;
+			}
+
+			this.addPlayer(new GPlayer(this, {
+				name: 'test',
+				color: data.color,
+				startX: data.startX,
+				startY: data.startY
+			}));
+		});
 	}
 
 	add(object) {
 		if (!object) {
-			throw "What should I add?"
+			throw "What should I add?";
 		}
 
 		if (this.objects[object.id]) {
@@ -131,7 +155,7 @@ class Game extends GObject {
 	}
 
 	start() {
-		let config = this.config
+		let config = this.config;
 		if (!config) {
 			throw 'No config loaded!';
 		}
@@ -140,9 +164,10 @@ class Game extends GObject {
 			return;
 		}
 
-		if (!this.player) {
-			this.addPlayer(new GPlayer(this, {name: 'test', color: '#f00'}));
-		}
+		this.socket.emit('start', {
+			screenWidth: this.options.screenWidth,
+			screenHeight: this.options.screenHeight
+		});
 
 		this.tickTimer = window.setInterval(()=>this.tick(), 1000 / this.config.fps);
 	}
@@ -155,11 +180,6 @@ class Game extends GObject {
 	}
 
 	tick() {
-		if (!this.player) {
-			this.stop();
-			throw "No player found on tick!"
-		}
-
 		this.canvas.clear();
 
 		for (let id in this.objects) {
@@ -177,6 +197,23 @@ class Game extends GObject {
 			this.drawObject(this.player.target.mark);
 		}
 
+		if (this.player) {
+			let pos = this.player.pos();
+			let left = Math.floor(pos.x);
+			let top = Math.floor(pos.y);
+
+			this.canvas.add(new fabric.Text(`Position: ${left} x ${top}`, {
+				fontSize: 12,
+				left: 10,
+				top: this.options.screenHeight - 20
+			}));
+		} else {
+			this.canvas.add(new fabric.Text('No player', {
+				left: this.options.screenWidth / 2,
+				top: this.options.screenHeight / 2
+			}));
+		}
+
 		this.canvas.renderAll();
 	}
 
@@ -185,14 +222,17 @@ class Game extends GObject {
 	}
 
 	drawGrid() {
-		let size = this.options.gridSize || 100;
+		let size = this.options.gridSize || 50;
 		let screenWidth = this.options.screenWidth;
 		let screenHeight = this.options.screenHeight;
 
 		let horizontalStep = size;
 		let verticalStep = size;
 
-		let playerPos = this.player.pos();
+		let playerPos = this.player ? this.player.pos() : {
+			x: screenWidth / 2,
+			y: screenHeight / 2
+		};
 
 		let lineOptions = {
 			stroke: this.config.borderColor,
@@ -214,9 +254,13 @@ class Game extends GObject {
 	}
 
 	drawBorder() {
-		let player = this.player.pos();
 		let options = this.options;
 		let config = this.config;
+
+		let player = this.player ? this.player.pos() : {
+			x: options.screenWidth,
+			y: options.screenHeight
+		};
 
 		let lineOptions = {
 			stroke: '#000',
@@ -232,7 +276,7 @@ class Game extends GObject {
 				options.screenHeight/2 - player.y,
 				options.screenWidth/2 - player.x,
 				config.height + options.screenHeight/2 - player.y
-			], lineOptions))
+			], lineOptions));
 		}
 
 		// Top
@@ -242,27 +286,27 @@ class Game extends GObject {
 				options.screenHeight/2 - player.y,
 				config.width + options.screenWidth/2 - player.x,
 				options.screenHeight/2 - player.y
-			], lineOptions))
+			], lineOptions));
 		}
 
 		// Right
-		if (options.width - player.x <= options.screenWidth/2) {
+		if (config.width - player.x <= options.screenWidth/2) {
 			borders.push(new fabric.Line([
 				config.width + options.screenWidth/2 - player.x,
 				options.screenHeight/2 - player.y,
 				config.width + options.screenWidth/2 - player.x,
 				config.height + options.screenHeight/2 - player.y
-			], lineOptions))
+			], lineOptions));
 		}
 
 		// Bottom
-		if (options.height - player.y <= options.screenHeight/2) {
+		if (config.height - player.y <= options.screenHeight/2) {
 			borders.push(new fabric.Line([
 				config.width + options.screenWidth/2 - player.x,
 				config.height + options.screenHeight/2 - player.y,
 				options.screenWidth/2 - player.x,
 				config.height + options.screenHeight/2 - player.y
-			], lineOptions))
+			], lineOptions));
 		}
 
 		this.canvas.add.apply(this.canvas, borders);

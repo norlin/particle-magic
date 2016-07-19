@@ -1,8 +1,7 @@
-import 'fabric'
-import Log from 'common/log'
-import GElement from './element'
-import Keys from './keys'
-import Utils from './utils'
+import Log from 'common/log';
+import GElement from './element';
+import Keys from './keys';
+import Utils from 'common/utils';
 
 let log = new Log('Player');
 
@@ -16,8 +15,8 @@ class GPlayer extends GElement {
 	initParams() {
 		super.initParams();
 
-		this._position.x = this.game.options.screenWidth / 2;
-		this._position.y = this.game.options.screenHeight / 2;
+		this._position.x = this.options.startX;
+		this._position.y = this.options.startY;
 
 		this.radius = 20;
 		this.mass = 100;
@@ -107,6 +106,7 @@ class GPlayer extends GElement {
 
 		if (this.target.mark) {
 			this.target.mark.remove();
+			this.target.mark = undefined;
 		}
 	}
 

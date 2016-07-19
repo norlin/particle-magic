@@ -1,5 +1,5 @@
-import Log from 'common/log'
-import { connect as io } from 'socket.io-client'
+import Log from 'common/log';
+import { connect as io } from 'socket.io-client';
 
 let log = new Log('Socket');
 
@@ -22,7 +22,7 @@ function create(game, options) {
 		instance = new Client(game, options);
 	}
 
-	return instance
+	return instance;
 }
 
 export default create;

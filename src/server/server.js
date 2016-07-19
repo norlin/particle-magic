@@ -1,7 +1,8 @@
-import express from 'express'
+import express from 'express';
 import socket from 'socket.io';
 import * as HTTP from 'http';
 import Log from '../common/log';
+import Game from './game';
 
 const log = new Log('Server');
 
@@ -22,20 +23,11 @@ class Server {
 			log.info(`Server listening on ${config.host}:${config.port}`);
 		});
 
-		io.on('connection', (socket)=>this.connection(socket));
+		this.createGame(io);
 	}
 
-	connection(socket) {
-		log.debug('A user connected!', socket.handshake.query.type);
-
-		socket.on('event', function(data){
-			log.debug('Event', data);
-		});
-		socket.on('disconnect', function(){
-			log.debug('User disconnected');
-		});
-
-		socket.emit('config', this.config);
+	createGame(io) {
+		let game = new Game(this.config, io);
 	}
 }
 

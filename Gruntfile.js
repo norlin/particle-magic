@@ -3,6 +3,40 @@
 module.exports = function(grunt) {
 
 grunt.initConfig({
+	jshint: {
+		options: {
+			strict: 'implied',
+			esversion: 6,
+		},
+		client: {
+			options: {
+				browser: true,
+				globals: {
+					fabric: true,
+					console: true
+				}
+			},
+			files: {
+				src: [
+					'src/common',
+					'src/client'
+				]
+			},
+		},
+		server: {
+			options: {
+				node: true
+			},
+			files: {
+				src: [
+					'src/common',
+					'src/server',
+					'./index.js',
+					'./config.js'
+				]
+			}
+		}
+	},
 	browserify: {
 		client: {
 			options: {
@@ -10,7 +44,8 @@ grunt.initConfig({
 					debug: true,
 					paths: ['./src']
 				},
-				transform: [['babelify', {presets: ['es2015']}]]
+				transform: [['babelify', {presets: ['es2015']}]],
+				plugins: ['transform-strict-mode']
 			},
 			files: {
 				'build/client/js/main.js': 'src/client/js/main.js'

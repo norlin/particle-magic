@@ -1,5 +1,3 @@
-'use strict';
-
 import Log from './common/log';
 import Server from './server/server';
 import config from './config';

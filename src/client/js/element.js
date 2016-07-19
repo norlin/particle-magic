@@ -1,8 +1,8 @@
-import GObject from './object.js'
+import GObject from 'common/object.js';
 
 class GElement extends GObject {
 	constructor(game, options) {
-		super(game, options)
+		super(game, options);
 
 		this.initParams();
 		this.el = this.createEl();
