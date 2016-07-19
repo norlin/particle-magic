@@ -47,7 +47,7 @@ class Game extends GObject {
 	}
 
 	onStart(socket, data) {
-		let player = new GPlayer(this, {
+		let player = new GPlayer(this, socket, {
 			screenWidth: data.screenWidth,
 			screenHeight: data.screenHeight,
 			startX: Utils.randomInRange(0, this.config.width),
@@ -55,12 +55,6 @@ class Game extends GObject {
 		});
 
 		this.add(player);
-
-		socket.emit('createPlayer', {
-			color: '#0f0',
-			startX: player._position.x,
-			startY: player._position.y
-		});
 	}
 
 	start() {

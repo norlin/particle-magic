@@ -82,6 +82,17 @@ class Game extends GObject {
 				startY: data.startY
 			}));
 		});
+
+		this.socket.on('updatePosition', (data)=>{
+			this.player.target.x = data.targetX;
+			this.player.target.y = data.targetY;
+			this.player._position.x = data.x;
+			this.player._position.y = data.y;
+		});
+
+		this.on('gameClick', (point)=>{
+			this.socket.emit('setTarget', point);
+		})
 	}
 
 	add(object) {

@@ -4,8 +4,23 @@ import GElement from './element.js';
 let log = new Log('Player');
 
 class GPlayer extends GElement {
-	constructor(game, options) {
+	constructor(game, socket, options) {
 		super(game, options);
+
+		this.socket = socket;
+
+		socket.on('setTarget', (point)=>{
+			this.target = {
+				x: point.x - this.radius,
+				y: point.y - this.radius
+			};
+		});
+
+		socket.emit('createPlayer', {
+			color: '#0f0',
+			startX: this._position.x,
+			startY: this._position.y
+		});
 	}
 
 	initParams() {
@@ -76,6 +91,13 @@ class GPlayer extends GElement {
 		if (Math.abs(pos.x - this.target.x) < 1 && Math.abs(pos.y - this.target.y) < 1) {
 			this.stopMovement();
 		}
+
+		this.socket.emit('updatePosition', {
+			x: pos.x,
+			y: pos.y,
+			targetX: this.target.x,
+			targetY: this.target.y
+		});
 	}
 }
 

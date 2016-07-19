@@ -111,7 +111,7 @@ class GPlayer extends GElement {
 	}
 
 	tick() {
-		this.move();
+		//this.move();
 
 		let pos = this.pos();
 		if (Math.abs(pos.x - this.target.x) < 1 && Math.abs(pos.y - this.target.y) < 1) {
