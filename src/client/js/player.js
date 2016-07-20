@@ -1,7 +1,6 @@
 import Log from 'common/log';
 import GElement from './element';
 import Keys from './keys';
-import Utils from 'common/utils';
 
 let log = new Log('Player');
 
@@ -15,25 +14,10 @@ class GPlayer extends GElement {
 	initParams() {
 		super.initParams();
 
-		this._position.x = this.options.startX;
-		this._position.y = this.options.startY;
-
-		this.radius = 20;
-		this.mass = 100;
-
 		this.target = {
 			x: this._position.x,
 			y: this._position.y
 		};
-	}
-
-	createEl() {
-		return new fabric.Circle({
-			radius: this.radius,
-			fill: this.options.color,
-			left: 0,
-			top: 0
-		});
 	}
 
 	addListeners() {
@@ -47,11 +31,13 @@ class GPlayer extends GElement {
 				y: point.y - this.radius
 			};
 
+			let markPos = this.game.toScreenCoords(this.target.x, this.target.y);
+
 			this.target.mark = new fabric.Circle({
 				radius: 2,
 				fill: this.options.color,
-				left: this.target.x,
-				top: this.target.y
+				left: markPos.x,
+				top: markPos.y
 			});
 		}, true);
 	}
@@ -86,12 +72,6 @@ class GPlayer extends GElement {
 
 		this._position.x += deltaX;
 		this._position.y += deltaY;
-
-		if (this.target.mark) {
-			this.target.mark.set('left', this.target.x - this._position.x + this.radius + (this.game.options.screenWidth / 2));
-			this.target.mark.set('top', this.target.y - this._position.y + this.radius + (this.game.options.screenHeight / 2));
-			this.target.mark.setCoords();
-		}
 	}
 
 	stopMovement() {
@@ -111,39 +91,23 @@ class GPlayer extends GElement {
 	}
 
 	tick() {
+		// moves calculated on server
 		//this.move();
 
 		let pos = this.pos();
 		if (Math.abs(pos.x - this.target.x) < 1 && Math.abs(pos.y - this.target.y) < 1) {
 			this.stopMovement();
+		} else {
+			let markPos = this.game.toScreenCoords(this.target.x + this.radius, this.target.y + this.radius);
+
+			if (this.target.mark) {
+				this.target.mark.set('left', markPos.x);
+				this.target.mark.set('top', markPos.y);
+				this.target.mark.setCoords();
+			}
 		}
 
-		let screenWidth = this.game.options.screenWidth / 2;
-		let screenHeight = this.game.options.screenHeight / 2;
-		let gameWidth = this.game.options.width;
-		let gameHeight = this.game.options.height;
-
-		var x = 0;
-		var y = 0;
-
-		let player = this.pos();
-		let userCurrent = this.pos();
-		let cellCurrent = this.pos();
-
-		let points = 30 + ~~(this.mass/5);
-		let increase = Math.PI * 2 / points;
-
-		var start = {
-			x: player.x - (screenWidth),
-			y: player.y - (screenHeight)
-		};
-
-		var circle = {
-			x: cellCurrent.x - start.x,
-			y: cellCurrent.y - start.y
-		};
-
-		this.draw(circle.x, circle.y);
+		this.draw(pos.x, pos.y);
 	}
 }
 

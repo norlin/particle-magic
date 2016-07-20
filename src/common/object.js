@@ -4,7 +4,7 @@ class GObject extends EventEmitter {
 	constructor(game, options) {
 		super();
 
-		this.id = 'uuid_'+Math.random();
+		this.id = options.id || 'uuid_'+Math.random();
 
 		if (game) {
 			this.game = game;

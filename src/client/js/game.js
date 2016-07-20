@@ -3,6 +3,7 @@ import GObject from 'common/object.js';
 import Keys from './keys';
 import Socket from './connection';
 import GPlayer from './player';
+import GElement from './element';
 
 let log = new Log('Game');
 
@@ -76,10 +77,12 @@ class Game extends GObject {
 			}
 
 			this.addPlayer(new GPlayer(this, {
+				id: data.id,
 				name: 'test',
 				color: data.color,
 				startX: data.startX,
-				startY: data.startY
+				startY: data.startY,
+				radius: data.radius
 			}));
 		});
 
@@ -88,11 +91,55 @@ class Game extends GObject {
 			this.player.target.y = data.targetY;
 			this.player._position.x = data.x;
 			this.player._position.y = data.y;
+
+			let visible = data.visible;
+			//log.debug('visible', visible);
+
+			this.iterate((object)=>{
+				let id = object.id;
+
+				if (id == this.player.id) {
+					// skip player object
+					return;
+				}
+
+				if (!visible[id]) {
+					this.remove(id);
+				}
+			});
+
+			for (let id in visible) {
+				let newObject = visible[id];
+				let existing = this.objects[id];
+
+				if (existing) {
+					log.debug('update', newObject.x, newObject.y);
+					existing._position.x = newObject.x;
+					existing._position.y = newObject.y;
+					existing.radius = newObject.radius;
+					existing.color = newObject.color;
+					continue;
+				}
+
+				this.addMass({
+					id: id,
+					startX: newObject.x,
+					startY: newObject.y,
+					radius: newObject.radius,
+					color: newObject.color
+				});
+			}
 		});
 
 		this.on('gameClick', (point)=>{
 			this.socket.emit('setTarget', point);
 		})
+	}
+
+	iterate(method) {
+		for (let id in this.objects) {
+			method(this.objects[id]);
+		}
 	}
 
 	add(object) {
@@ -105,16 +152,33 @@ class Game extends GObject {
 			return false;
 		}
 
-		log.debug('adding object...', object.el);
+		log.debug('adding object...', object.id);
 		this.objects[object.id] = object;
 		this.canvas.add(object.el);
 
 		return true;
 	}
 
+	remove(id) {
+		if (!this.objects[id] || this.player.id == id) {
+			return;
+		}
+
+		this.objects[id].el.remove();
+		this.objects[id].el = undefined;
+		this.objects[id] = undefined;
+		delete this.objects[id];
+	}
+
 	addPlayer(player) {
 		this.player = player;
 		this.add(player);
+	}
+
+	addMass(options) {
+		let mass = new GElement(this, options);
+
+		this.add(mass);
 	}
 
 	onKeyDown(event) {
@@ -193,19 +257,26 @@ class Game extends GObject {
 	tick() {
 		this.canvas.clear();
 
-		for (let id in this.objects) {
-			let object = this.objects[id];
-
+		this.iterate((object)=>{
 			if (object.tick) {
 				object.tick();
 			}
-		}
+		});
 
 		this.drawGrid();
 		this.drawBorder();
-		this.drawObject(this.player.el);
+
+		let elements = [];
+		this.iterate((object)=>{
+			if (!object.el) {
+				return;
+			}
+
+			elements.push(object.el);
+		});
+
 		if (this.player.target && this.player.target.mark) {
-			this.drawObject(this.player.target.mark);
+			elements.push(this.player.target.mark);
 		}
 
 		if (this.player) {
@@ -213,23 +284,20 @@ class Game extends GObject {
 			let left = Math.floor(pos.x);
 			let top = Math.floor(pos.y);
 
-			this.canvas.add(new fabric.Text(`Position: ${left} x ${top}`, {
+			elements.push(new fabric.Text(`Position: ${left} x ${top}`, {
 				fontSize: 12,
 				left: 10,
 				top: this.options.screenHeight - 20
 			}));
 		} else {
-			this.canvas.add(new fabric.Text('No player', {
+			elements.push(new fabric.Text('No player', {
 				left: this.options.screenWidth / 2,
 				top: this.options.screenHeight / 2
 			}));
 		}
 
+		this.canvas.add.apply(this.canvas, elements);
 		this.canvas.renderAll();
-	}
-
-	drawObject(el) {
-		this.canvas.add(el);
 	}
 
 	drawGrid() {
@@ -321,6 +389,18 @@ class Game extends GObject {
 		}
 
 		this.canvas.add.apply(this.canvas, borders);
+	}
+
+	toScreenCoords(x, y) {
+		let halfWidth = this.options.screenWidth / 2;
+		let halfHeight = this.options.screenHeight / 2;
+
+		let playerPos = this.player.pos();
+
+		return {
+			x: x - playerPos.x + halfWidth,
+			y: y - playerPos.y + halfHeight
+		};
 	}
 }
 

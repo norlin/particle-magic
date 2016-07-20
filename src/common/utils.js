@@ -6,6 +6,10 @@ class Utils {
 	randomInRange(min, max) {
 		return Math.floor(Math.random() * (max-min) + min);
 	}
+
+	getRandomColor() {
+		return '#'+((1<<24)*Math.random()|0).toString(16);
+	}
 }
 
 const instance = new Utils();

@@ -8,6 +8,10 @@ class GPlayer extends GElement {
 		super(game, options);
 
 		this.socket = socket;
+		this.screen = {
+			width: this.options.screenWidth,
+			height: this.options.screenHeight
+		};
 
 		socket.on('setTarget', (point)=>{
 			this.target = {
@@ -17,23 +21,16 @@ class GPlayer extends GElement {
 		});
 
 		socket.emit('createPlayer', {
-			color: '#0f0',
+			id: this.id,
+			color: this.color,
 			startX: this._position.x,
-			startY: this._position.y
+			startY: this._position.y,
+			radius: this.radius
 		});
 	}
 
 	initParams() {
 		super.initParams();
-
-		this._position = {
-			x: this.options.startX,
-			y: this.options.startY
-		};
-
-		this.speed = 6.25;
-		this.radius = 20;
-		this.mass = 100;
 
 		this.target = {
 			x: this._position.x,
@@ -91,12 +88,23 @@ class GPlayer extends GElement {
 		if (Math.abs(pos.x - this.target.x) < 1 && Math.abs(pos.y - this.target.y) < 1) {
 			this.stopMovement();
 		}
+	}
+
+	updateClient() {
+		let pos = this.pos();
+		let screen = {
+			width: this.screen.width,
+			height: this.screen.height
+		}
+
+		let objects = this.game.getVisibleObjects(this.id, pos, screen);
 
 		this.socket.emit('updatePosition', {
 			x: pos.x,
 			y: pos.y,
 			targetX: this.target.x,
-			targetY: this.target.y
+			targetY: this.target.y,
+			visible: objects
 		});
 	}
 }
