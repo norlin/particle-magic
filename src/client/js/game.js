@@ -61,6 +61,7 @@ class Game extends GObject {
 		this.canvas.setBackgroundColor('#fff');
 
 		document.body.addEventListener('keydown', (e)=>this.onKeyDown(e), true);
+		document.body.addEventListener('keyup', (e)=>this.onKeyUp(e), true);
 		document.body.addEventListener('click', (e)=>this.onClick(e), true);
 
 		window.addEventListener('resize', (e)=>{
@@ -193,6 +194,16 @@ class Game extends GObject {
 		}
 	}
 
+	onKeyUp(event) {
+		let code = event.which;
+
+		this.emit(`keyup.${code}.global`);
+
+		if (this.tickTimer) {
+			this.emit(`keyup.${code}`);
+		}
+	}
+
 	onClick(mouse) {
 		let point = {
 			x: mouse.clientX - this.options.screenWidth / 2,
@@ -222,6 +233,11 @@ class Game extends GObject {
 	addKeyListener(key, handler, global) {
 		let isGlobal = global ? '.global' : '';
 		this.on(`keydown.${key}${isGlobal}`, handler);
+	}
+
+	addKeyUpListener(key, handler, global) {
+		let isGlobal = global ? '.global' : '';
+		this.on(`keyup.${key}${isGlobal}`, handler);
 	}
 
 	addClickListener(handler, inGame, global) {

@@ -4,6 +4,9 @@ import QuadTree from 'simple-quadtree';
 
 let log = new Log('Field');
 
+const FWHM = 2*(Math.sqrt(2*Math.log(2)));
+const FWTM = 2*(Math.sqrt(2*Math.log(10)));
+
 class Field extends GObject {
 	constructor(game, options) {
 		super(game, options);
@@ -14,7 +17,7 @@ class Field extends GObject {
 		this.tree = QuadTree(0, 0, width, height);
 
 		let step = this.step = 10;
-		let fadeStep = step * 10000;
+		let fadeStep = Math.pow(step, 2);
 
 		this.dips = [{
 			x: 500,
@@ -25,19 +28,16 @@ class Field extends GObject {
 			y: 3000,
 			fade: fadeStep/2
 		}];
-
-		/*for (let x = 0; x < width; x += step) {
-			for (let y = 0; y < height; y += step) {
-				this.tree.put({x: x, y: y, w: step, h: step, text: this.getColor(x, y)});
-			}
-		}*/
 	}
 
 	field(x, y) {
 		var basic = this.basic;
 
+		// https://en.wikipedia.org/wiki/Gaussian_function
+
 		function getDip(dip) {
-			return basic * Math.exp(-( (Math.pow(x-dip.x, 2)/dip.fade) + (Math.pow(y-dip.y, 2)/dip.fade)));
+			let c = 2 * Math.pow(dip.fade, 2);
+			return basic * Math.exp(-( (Math.pow(x-dip.x, 2)/c) + (Math.pow(y-dip.y, 2)/c)));
 		}
 
 		this.dips.forEach((dip)=>{
@@ -45,11 +45,12 @@ class Field extends GObject {
 			basic -= dipValue;
 		});
 
-		let pos = this.game.player.pos();
+		let player = this.game.player;
+		let pos = player.pos();
 		let playerDip = {
 			x: pos.x,
 			y: pos.y,
-			fade: this.step * 500
+			fade: player.power
 		};
 
 		return basic - getDip(playerDip);
@@ -103,6 +104,16 @@ class Field extends GObject {
 			let screenPos = this.game.toScreenCoords(point.x, point.y);
 
 			canvas.drawRect(screenPos.x, screenPos.y, point.w, point.h, point.text);
+		});
+
+		this.dips.forEach((dip)=>{
+			let radius = dip.fade * FWHM;
+
+			log.debug(radius);
+
+			let screenPos = this.game.toScreenCoords(dip.x, dip.y);
+
+			canvas.strokeCircle(screenPos.x, screenPos.y, radius, '#fff');
 		});
 	}
 }

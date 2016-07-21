@@ -50,6 +50,16 @@ class Canvas extends GObject {
 		ctx.fill();
 	}
 
+	strokeCircle(x, y, radius, color) {
+		let ctx = this.ctx;
+
+		ctx.beginPath();
+		ctx.arc(x, y, radius, 0, this.pi2, false);
+		ctx.lineWidth = 3;
+		ctx.strokeStyle = color;
+		ctx.stroke();
+	}
+
 	drawRect(x, y, w, h, color) {
 		let ctx = this.ctx;
 

@@ -14,6 +14,10 @@ class GPlayer extends GElement {
 	initParams() {
 		super.initParams();
 
+		this.basicPower = 10;
+		this.maxPower = this.basicPower * 20;
+		this.power = this.basicPower;
+
 		this.target = {
 			x: this._position.x,
 			y: this._position.y
@@ -40,6 +44,23 @@ class GPlayer extends GElement {
 				y: markPos.y
 			};
 		}, true);
+
+		this.game.addKeyListener(Keys.SPACE, (event)=>{
+			if (this.fire) {
+				return;
+			}
+
+			if (this.accumulate) {
+				this.launchFire();
+			} else {
+				this.accumulate = true;
+			}
+		});
+	}
+
+	launchFire() {
+		this.accumulate = false;
+		this.fire = true;
 	}
 
 	move() {
@@ -92,6 +113,22 @@ class GPlayer extends GElement {
 	tick() {
 		// moves calculated on server
 		//this.move();
+
+		if (this.accumulate) {
+			if (this.power < this.maxPower) {
+				this.power += 1;
+			} else {
+				this.launchFire();
+			}
+		} else if (this.fire) {
+			if (this.power > this.basicPower) {
+				this.power = Math.max(this.power - 5, this.basicPower);
+			} else {
+				this.fire = false;
+			}
+		} else if (this.power > this.basicPower) {
+			this.power -= 1;
+		}
 
 		let pos = this.pos();
 		if (Math.abs(pos.x - this.target.x) < 1 && Math.abs(pos.y - this.target.y) < 1) {

@@ -43,12 +43,19 @@ grunt.initConfig({
 					debug: true,
 					paths: ['./src']
 				},
-				transform: [['babelify', {presets: ['es2015']}]],
+				transform: [['babelify', {presets: ['es2015']}], ['brfs']],
 				plugins: ['transform-strict-mode']
 			},
-			files: {
-				'build/client/js/main.js': 'src/client/js/main.js'
-			}
+			files: [
+				{
+					nonull: true,
+					cwd: 'src/',
+					src: [
+						'src/client/js/main.js',
+					],
+					dest: 'build/client/js/main.js'
+				},
+			]
 		},
 	},
 	babel: {
@@ -91,9 +98,22 @@ grunt.initConfig({
 	},
 	copy: {
 		html: {
-			files: {
-				'build/client/index.html': 'src/client/index.html'
-			}
+			files: [
+				{
+					nonull: true,
+					dest: 'build/client/index.html',
+					src: 'src/client/index.html'
+				},
+				{
+					nonull: true,
+					expand: true,
+					cwd: 'src/',
+					src: [
+						'client/shaders/*.*',
+					],
+					dest: 'build/'
+				}
+			]
 		}
 	},
 	less: {
@@ -114,7 +134,8 @@ grunt.initConfig({
 		js_client: {
 			files: [
 				'src/client/js/*.js',
-				'src/common/*.js'
+				'src/common/*.js',
+				'src/client/shaders/*.*'
 			],
 			tasks: [
 				'jshint:client',
