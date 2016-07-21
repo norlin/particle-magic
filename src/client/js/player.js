@@ -23,22 +23,22 @@ class GPlayer extends GElement {
 	addListeners() {
 		this.game.addClickListener((point) => {
 			if (this.target.mark) {
-				this.target.mark.remove();
+				this.target.mark = undefined;
 			}
 
 			this.target = {
-				x: point.x - this.radius,
-				y: point.y - this.radius
+				x: point.x,
+				y: point.y
 			};
 
 			let markPos = this.game.toScreenCoords(this.target.x, this.target.y);
 
-			this.target.mark = new fabric.Circle({
+			this.target.mark = {
 				radius: 2,
-				fill: this.options.color,
-				left: markPos.x,
-				top: markPos.y
-			});
+				color: this.options.color,
+				x: markPos.x,
+				y: markPos.y
+			};
 		}, true);
 	}
 
@@ -85,7 +85,6 @@ class GPlayer extends GElement {
 		this.target.y = this._position.y;
 
 		if (this.target.mark) {
-			this.target.mark.remove();
 			this.target.mark = undefined;
 		}
 	}
@@ -98,16 +97,21 @@ class GPlayer extends GElement {
 		if (Math.abs(pos.x - this.target.x) < 1 && Math.abs(pos.y - this.target.y) < 1) {
 			this.stopMovement();
 		} else {
-			let markPos = this.game.toScreenCoords(this.target.x + this.radius, this.target.y + this.radius);
-
 			if (this.target.mark) {
-				this.target.mark.set('left', markPos.x);
-				this.target.mark.set('top', markPos.y);
-				this.target.mark.setCoords();
+				let markPos = this.game.toScreenCoords(this.target.x, this.target.y);
+
+				this.target.mark.x = markPos.x;
+				this.target.mark.y = markPos.y;
 			}
 		}
+	}
 
-		this.draw(pos.x, pos.y);
+	draw(canvas) {
+		if (this.target.mark) {
+			this.game.canvas.drawCircle(this.target.mark.x, this.target.mark.y, this.target.mark.radius, this.target.mark.color);
+		}
+
+		super.draw(canvas);
 	}
 }
 

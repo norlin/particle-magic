@@ -54,8 +54,8 @@ class Game extends GObject {
 		let player = new GPlayer(this, socket, {
 			screenWidth: data.screenWidth,
 			screenHeight: data.screenHeight,
-			startX: Utils.randomInRange(0, this.config.width),
-			startY: Utils.randomInRange(0, this.config.height),
+			startX: 100, // Utils.randomInRange(0, this.config.width),
+			startY: 100, //Utils.randomInRange(0, this.config.height),
 			radius: 20
 		});
 
@@ -118,14 +118,6 @@ class Game extends GObject {
 				};
 			}
 		});
-
-		objects['test'] = {
-			id: 'test',
-			x: 1000,
-			y: 1000,
-			radius: 10,
-			color: '#f00'
-		};
 
 		return objects;
 	}

@@ -15,8 +15,8 @@ class GPlayer extends GElement {
 
 		socket.on('setTarget', (point)=>{
 			this.target = {
-				x: point.x - this.radius,
-				y: point.y - this.radius
+				x: point.x,
+				y: point.y
 			};
 		});
 
@@ -95,7 +95,7 @@ class GPlayer extends GElement {
 		let screen = {
 			width: this.screen.width,
 			height: this.screen.height
-		}
+		};
 
 		let objects = this.game.getVisibleObjects(this.id, pos, screen);
 

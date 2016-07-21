@@ -4,6 +4,8 @@ import Keys from './keys';
 import Socket from './connection';
 import GPlayer from './player';
 import GElement from './element';
+import Canvas from './canvas';
+import Field from './field';
 
 let log = new Log('Game');
 
@@ -24,6 +26,11 @@ class Game extends GObject {
 		this.config = config;
 
 		log.debug(config);
+
+		this.field = new Field(this, {
+			width: config.width,
+			height: config.height
+		});
 
 		this.addKeyListener(Keys.ENTER, () => {
 			if (this.tickTimer) {
@@ -46,7 +53,11 @@ class Game extends GObject {
 		el.width = this.options.screenWidth;
 		el.height = this.options.screenHeight;
 
-		this.canvas = new fabric.StaticCanvas(this.options.canvas);
+		this.canvas = new Canvas(this, {
+			canvas: el,
+			width: this.options.screenWidth,
+			height: this.options.screenHeight
+		});
 		this.canvas.setBackgroundColor('#fff');
 
 		document.body.addEventListener('keydown', (e)=>this.onKeyDown(e), true);
@@ -59,10 +70,6 @@ class Game extends GObject {
 			document.getElementById(this.options.canvas);
 			el.width = this.options.screenWidth;
 			el.height = this.options.screenHeight;
-
-			this.canvas.setWidth(this.options.screenWidth);
-			this.canvas.setHeight(this.options.screenHeight);
-			this.canvas.calcOffset();
 		});
 	}
 
@@ -93,7 +100,6 @@ class Game extends GObject {
 			this.player._position.y = data.y;
 
 			let visible = data.visible;
-			//log.debug('visible', visible);
 
 			this.iterate((object)=>{
 				let id = object.id;
@@ -113,7 +119,6 @@ class Game extends GObject {
 				let existing = this.objects[id];
 
 				if (existing) {
-					log.debug('update', newObject.x, newObject.y);
 					existing._position.x = newObject.x;
 					existing._position.y = newObject.y;
 					existing.radius = newObject.radius;
@@ -133,7 +138,7 @@ class Game extends GObject {
 
 		this.on('gameClick', (point)=>{
 			this.socket.emit('setTarget', point);
-		})
+		});
 	}
 
 	iterate(method) {
@@ -154,7 +159,6 @@ class Game extends GObject {
 
 		log.debug('adding object...', object.id);
 		this.objects[object.id] = object;
-		this.canvas.add(object.el);
 
 		return true;
 	}
@@ -164,8 +168,6 @@ class Game extends GObject {
 			return;
 		}
 
-		this.objects[id].el.remove();
-		this.objects[id].el = undefined;
 		this.objects[id] = undefined;
 		delete this.objects[id];
 	}
@@ -210,8 +212,8 @@ class Game extends GObject {
 		}
 
 		let gamePoint = {
-			x: pos.x + point.x,
-			y: pos.y + point.y
+			x: pos.x + point.x + this.player.radius,
+			y: pos.y + point.y + this.player.radius
 		};
 
 		this.emit(`gameClick`, gamePoint);
@@ -263,41 +265,23 @@ class Game extends GObject {
 			}
 		});
 
-		this.drawGrid();
+		this.field.draw();
+
+		//this.drawGrid();
 		this.drawBorder();
 
 		let elements = [];
-		this.iterate((object)=>{
-			if (!object.el) {
-				return;
-			}
-
-			elements.push(object.el);
-		});
-
-		if (this.player.target && this.player.target.mark) {
-			elements.push(this.player.target.mark);
-		}
+		this.iterate((object)=>this.canvas.add(object));
 
 		if (this.player) {
 			let pos = this.player.pos();
 			let left = Math.floor(pos.x);
 			let top = Math.floor(pos.y);
 
-			elements.push(new fabric.Text(`Position: ${left} x ${top}`, {
-				fontSize: 12,
-				left: 10,
-				top: this.options.screenHeight - 20
-			}));
+			this.canvas.drawText(10, this.options.screenHeight - 20, `Position: ${left} x ${top}`);
 		} else {
-			elements.push(new fabric.Text('No player', {
-				left: this.options.screenWidth / 2,
-				top: this.options.screenHeight / 2
-			}));
+			this.canvas.drawText(this.options.screenWidth / 2, this.options.screenHeight / 2, 'No player');
 		}
-
-		this.canvas.add.apply(this.canvas, elements);
-		this.canvas.renderAll();
 	}
 
 	drawGrid() {
@@ -313,21 +297,26 @@ class Game extends GObject {
 			y: screenHeight / 2
 		};
 
-		let lineOptions = {
-			stroke: this.config.borderColor,
-			selectable: false
-		};
-
 		let lines = [];
 		let init = {x: -0 -playerPos.x, y: -0 -playerPos.y};
 
+		let ctx = this.canvas.ctx;
+
+		ctx.beginPath();
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = this.config.borderColor;
+
 		for (let x = init.x; x < screenWidth; x += horizontalStep) {
-			lines.push(new fabric.Line([x, 0, x, screenHeight], lineOptions));
+			ctx.moveTo(x, 0);
+			ctx.lineTo(x, screenHeight);
 		}
 
 		for (let y = init.y; y < screenHeight; y += verticalStep) {
-			lines.push(new fabric.Line([0, y, screenWidth, y], lineOptions));
+			ctx.moveTo(0, y);
+			ctx.lineTo(screenWidth, y);
 		}
+
+		ctx.stroke();
 
 		this.canvas.add.apply(this.canvas, lines);
 	}
@@ -341,54 +330,37 @@ class Game extends GObject {
 			y: options.screenHeight
 		};
 
-		let lineOptions = {
-			stroke: '#000',
-			selectable: false
-		};
+		let ctx = this.canvas.ctx;
 
-		let borders = [];
+		ctx.beginPath();
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = this.config.borderColor;
 
 		// Left
 		if (player.x <= options.screenWidth/2) {
-			borders.push(new fabric.Line([
-				options.screenWidth/2 - player.x,
-				options.screenHeight/2 - player.y,
-				options.screenWidth/2 - player.x,
-				config.height + options.screenHeight/2 - player.y
-			], lineOptions));
+			ctx.moveTo(options.screenWidth/2 - player.x, options.screenHeight/2 - player.y);
+			ctx.lineTo(options.screenWidth/2 - player.x, config.height + options.screenHeight/2 - player.y);
 		}
 
 		// Top
 		if (player.y <= options.screenHeight/2) {
-			borders.push(new fabric.Line([
-				options.screenWidth/2 - player.x,
-				options.screenHeight/2 - player.y,
-				config.width + options.screenWidth/2 - player.x,
-				options.screenHeight/2 - player.y
-			], lineOptions));
+			ctx.moveTo(options.screenWidth/2 - player.x, options.screenHeight/2 - player.y);
+			ctx.lineTo(config.width + options.screenWidth/2 - player.x, options.screenHeight/2 - player.y);
 		}
 
 		// Right
 		if (config.width - player.x <= options.screenWidth/2) {
-			borders.push(new fabric.Line([
-				config.width + options.screenWidth/2 - player.x,
-				options.screenHeight/2 - player.y,
-				config.width + options.screenWidth/2 - player.x,
-				config.height + options.screenHeight/2 - player.y
-			], lineOptions));
+			ctx.moveTo(config.width + options.screenWidth/2 - player.x, options.screenHeight/2 - player.y);
+			ctx.lineTo(config.width + options.screenWidth/2 - player.x, config.height + options.screenHeight/2 - player.y);
 		}
 
 		// Bottom
 		if (config.height - player.y <= options.screenHeight/2) {
-			borders.push(new fabric.Line([
-				config.width + options.screenWidth/2 - player.x,
-				config.height + options.screenHeight/2 - player.y,
-				options.screenWidth/2 - player.x,
-				config.height + options.screenHeight/2 - player.y
-			], lineOptions));
+			ctx.moveTo(config.width + options.screenWidth/2 - player.x, config.height + options.screenHeight/2 - player.y);
+			ctx.lineTo(options.screenWidth/2 - player.x, config.height + options.screenHeight/2 - player.y);
 		}
 
-		this.canvas.add.apply(this.canvas, borders);
+		ctx.stroke();
 	}
 
 	toScreenCoords(x, y) {

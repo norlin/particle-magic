@@ -5,16 +5,6 @@ class GElement extends GObject {
 		super(game, options);
 
 		this.initParams();
-		this.el = this.createEl();
-	}
-
-	createEl() {
-		return new fabric.Circle({
-			radius: this.radius,
-			fill: this.color,
-			left: this._position.x,
-			top: this._position.y
-		});
 	}
 
 	initParams() {
@@ -37,20 +27,14 @@ class GElement extends GObject {
 		};
 	}
 
-	// x & y – in-game coordinates, not canvas
-	draw() {
+	draw(canvas) {
 		let gamePos = this.pos();
 		let screenPos = this.game.toScreenCoords(gamePos.x, gamePos.y);
 
-		this.el.set('left', screenPos.x);
-		this.el.set('top', screenPos.y);
-
-		this.el.setCoords();
+		canvas.drawCircle(screenPos.x, screenPos.y, this.radius, this.color);
 	}
 
-	tick() {
-		this.draw();
-	}
+	tick() {}
 }
 
 export default GElement;

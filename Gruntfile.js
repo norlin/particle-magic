@@ -12,7 +12,6 @@ grunt.initConfig({
 			options: {
 				browser: true,
 				globals: {
-					fabric: true,
 					console: true
 				}
 			},
@@ -93,8 +92,7 @@ grunt.initConfig({
 	copy: {
 		html: {
 			files: {
-				'build/client/index.html': 'src/client/index.html',
-				'build/client/js/fabric.js': 'node_modules/fabric/dist/fabric.js'
+				'build/client/index.html': 'src/client/index.html'
 			}
 		}
 	},
@@ -118,7 +116,10 @@ grunt.initConfig({
 				'src/client/js/*.js',
 				'src/common/*.js'
 			],
-			tasks: ['browserify:client'],
+			tasks: [
+				'jshint:client',
+				'browserify:client'
+			],
 			options: {
 				spawn: false,
 			},
@@ -130,7 +131,10 @@ grunt.initConfig({
 				'./index.js',
 				'./config.js'
 			],
-			tasks: ['babel:server'],
+			tasks: [
+				'jshint:server',
+				'babel:server',
+			],
 			options: {
 				spawn: false,
 			},
@@ -157,6 +161,7 @@ require('load-grunt-tasks')(grunt);
 
 grunt.registerTask('build', [
 	'clean',
+	'jshint',
 	'babel:server',
 	'browserify:client',
 	'exorcise',
