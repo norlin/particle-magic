@@ -265,7 +265,10 @@ class Game extends GObject {
 			}
 		});
 
-		this.field.draw();
+		// separate player & viewpoint
+		if (this.player) {
+			this.field.draw();
+		}
 
 		//this.drawGrid();
 		this.drawBorder();

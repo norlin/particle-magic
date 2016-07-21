@@ -13,8 +13,8 @@ class Field extends GObject {
 		let height = this.options.height;
 		this.tree = QuadTree(0, 0, width, height);
 
-		let step = 50;
-		let fadeStep = step * 1000;
+		let step = this.step = 10;
+		let fadeStep = step * 10000;
 
 		this.dips = [{
 			x: 500,
@@ -26,31 +26,40 @@ class Field extends GObject {
 			fade: fadeStep/2
 		}];
 
-		for (let x = 0; x < width; x += step) {
+		/*for (let x = 0; x < width; x += step) {
 			for (let y = 0; y < height; y += step) {
 				this.tree.put({x: x, y: y, w: step, h: step, text: this.getColor(x, y)});
 			}
-		}
+		}*/
 	}
 
 	field(x, y) {
 		var basic = this.basic;
 
+		function getDip(dip) {
+			return basic * Math.exp(-( (Math.pow(x-dip.x, 2)/dip.fade) + (Math.pow(y-dip.y, 2)/dip.fade)));
+		}
+
 		this.dips.forEach((dip)=>{
-			let dipValue = basic * Math.exp(-( (Math.pow(x-dip.x, 2)/dip.fade) + (Math.pow(y-dip.y, 2)/dip.fade)));
+			let dipValue = getDip(dip);
 			basic -= dipValue;
 		});
 
-		return basic;
+		let pos = this.game.player.pos();
+		let playerDip = {
+			x: pos.x,
+			y: pos.y,
+			fade: this.step * 500
+		};
+
+		return basic - getDip(playerDip);
 	}
 
 	getColor(x, y) {
-		let value = this.field(x, y);
+		var value = this.field(x, y);
 
-		let bgValue = value < 1 ? 1-value : value;
-		let value = value < 1 ? value : (1-value);
-		let bg = Math.floor(bgValue * 255);
-		let color = Math.floor(value * 255);
+		let bg = Math.floor((1-value) * 170);
+		let color = Math.floor((value/2) * 255);
 
 		var hex = color.toString(16);
 		if (hex.length < 2) {
@@ -78,7 +87,17 @@ class Field extends GObject {
 			h: halfHeight * 2
 		};
 
-		let points = this.tree.get(area);
+		let x2 = area.x + area.w;
+		let y2 = area.y + area.h;
+
+		//let points = this.tree.get(area);
+		let points = [];
+		let step = this.step;
+		for (let x = area.x; x < x2; x += step) {
+			for (let y = area.y; y < y2; y += step) {
+				points.push({x: x, y: y, w: step, h: step, text: this.getColor(x, y)});
+			}
+		}
 
 		points.forEach((point)=>{
 			let screenPos = this.game.toScreenCoords(point.x, point.y);
