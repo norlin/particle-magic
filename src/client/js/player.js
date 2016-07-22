@@ -14,6 +14,8 @@ class GPlayer extends GElement {
 	initParams() {
 		super.initParams();
 
+		this.maxEnergy = 500;
+		this.energy = 0;
 		this.basicPower = 10;
 		this.maxPower = this.basicPower * 20;
 		this.power = this.basicPower;
@@ -46,7 +48,7 @@ class GPlayer extends GElement {
 		}, true);
 
 		this.game.addKeyListener(Keys.SPACE, (event)=>{
-			if (this.fire) {
+			/*if (this.fire) {
 				return;
 			}
 
@@ -54,13 +56,13 @@ class GPlayer extends GElement {
 				this.launchFire();
 			} else {
 				this.accumulate = true;
-			}
+			}*/
 		});
 	}
 
 	launchFire() {
-		this.accumulate = false;
-		this.fire = true;
+		/*this.accumulate = false;
+		this.fire = true;*/
 	}
 
 	move() {
@@ -114,7 +116,7 @@ class GPlayer extends GElement {
 		// moves calculated on server
 		//this.move();
 
-		if (this.accumulate) {
+		/*if (this.accumulate) {
 			if (this.power < this.maxPower) {
 				this.power += 1;
 			} else {
@@ -128,7 +130,7 @@ class GPlayer extends GElement {
 			}
 		} else if (this.power > this.basicPower) {
 			this.power -= 1;
-		}
+		}*/
 
 		let pos = this.pos();
 		if (Math.abs(pos.x - this.target.x) < 1 && Math.abs(pos.y - this.target.y) < 1) {
@@ -140,6 +142,11 @@ class GPlayer extends GElement {
 				this.target.mark.x = markPos.x;
 				this.target.mark.y = markPos.y;
 			}
+		}
+
+		if (this.energy < this.maxEnergy) {
+			let drained = this.game.field.consume(pos.x, pos.y, this.radius, 10);
+			this.energy = Math.min(this.maxEnergy, this.energy + drained);
 		}
 	}
 

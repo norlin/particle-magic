@@ -223,8 +223,8 @@ class Game extends GObject {
 		}
 
 		let gamePoint = {
-			x: pos.x + point.x + this.player.radius,
-			y: pos.y + point.y + this.player.radius
+			x: pos.x + point.x,
+			y: pos.y + point.y
 		};
 
 		this.emit(`gameClick`, gamePoint);
@@ -281,6 +281,8 @@ class Game extends GObject {
 			}
 		});
 
+		this.field.tick();
+
 		// separate player & viewpoint
 		if (this.player) {
 			this.field.draw();
@@ -297,7 +299,8 @@ class Game extends GObject {
 			let left = Math.floor(pos.x);
 			let top = Math.floor(pos.y);
 
-			this.canvas.drawText(10, this.options.screenHeight - 20, `Position: ${left} x ${top}`);
+			this.canvas.drawText(10, this.options.screenHeight - 40, `Position: ${left} x ${top}`);
+			this.canvas.drawText(10, this.options.screenHeight - 20, `Energy: ${this.player.energy}/${this.player.maxEnergy}`);
 		} else {
 			this.canvas.drawText(this.options.screenWidth / 2, this.options.screenHeight / 2, 'No player');
 		}

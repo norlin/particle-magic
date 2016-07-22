@@ -75,8 +75,6 @@ class GPlayer extends GElement {
 			return;
 		}
 
-		log.info('stopMovement');
-
 		this.target.x = this._position.x;
 		this.target.y = this._position.y;
 	}

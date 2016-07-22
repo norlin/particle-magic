@@ -1,4 +1,5 @@
 import Log from 'common/log';
+import Utils from 'common/utils';
 import GObject from 'common/object';
 import QuadTree from 'simple-quadtree';
 
@@ -11,49 +12,67 @@ class Field extends GObject {
 	constructor(game, options) {
 		super(game, options);
 
-		this.basic = 1;
+		this.sectors = [];
+
 		let width = this.options.width;
 		let height = this.options.height;
 		this.tree = QuadTree(0, 0, width, height);
 
-		let step = this.step = 10;
-		let fadeStep = Math.pow(step, 2);
+		let step = this.step = 100;
+		let fadeStep = 100;
 
 		this.dips = [{
 			x: 500,
 			y: 500,
-			fade: fadeStep
+			fade: width / 2,
+			power: 500
 		},{
 			x: 3000,
 			y: 3000,
-			fade: fadeStep/2
+			fade: width,
+			power: 1000
 		}];
+
+		let i = 0;
+		for (let x = 0; x < width; x += step) {
+			for (let y = 0; y < height; y += step) {
+				this.tree.put({
+					id: i,
+					x: x,
+					y: y,
+					w: step,
+					h: step
+				});
+				let value = this.getValue(x, y);
+				this.sectors.push({max: value, value: value});
+				i += 1;
+			}
+		}
 	}
 
 	field(x, y) {
-		var basic = this.basic;
+		var basic = 0;
 
 		// https://en.wikipedia.org/wiki/Gaussian_function
 
 		function getDip(dip) {
 			let c = 2 * Math.pow(dip.fade, 2);
-			return basic * Math.exp(-( (Math.pow(x-dip.x, 2)/c) + (Math.pow(y-dip.y, 2)/c)));
+			let direction = dip.fade < 0 ? -1 : 1;
+			return direction * dip.power * Math.exp(-(Math.pow(x-dip.x, 2) + Math.pow(y-dip.y, 2))/c);
 		}
 
 		this.dips.forEach((dip)=>{
 			let dipValue = getDip(dip);
-			basic -= dipValue;
+			basic += dipValue;
 		});
 
-		let player = this.game.player;
-		let pos = player.pos();
-		let playerDip = {
-			x: pos.x,
-			y: pos.y,
-			fade: player.power
-		};
+		return basic;
+	}
 
-		return basic - getDip(playerDip);
+	getValue(x, y) {
+		let value = this.field(x, y);
+
+		return value;
 	}
 
 	getColor(x, y) {
@@ -75,6 +94,47 @@ class Field extends GObject {
 		return `#${hex}${bgHex}${bgHex}`;
 	}
 
+	getColorValue(value) {
+		let s = 1000/255;
+
+		let r = 0;
+		let g = 0;
+		let b = 0;
+
+		let parts = Math.ceil(value / 1000);
+		if (parts==1) {
+			r = Math.round(value / s);
+			g = b = r;
+		} else if (parts == 2) {
+			r = 255;
+			g = Math.round((value-1000) / s);
+		} else if (parts >= 3) {
+			r = 255;
+			g = 255;
+			b = Math.min(255, Math.round((value-2000) / s));
+		}
+
+		return Utils.rgbToHex(r, g, b);
+	}
+
+	tick() {
+		let basicRecovery = 1;
+		this.sectors.forEach((sector)=>{
+			if (sector.drained) {
+				sector.drained = false;
+				return;
+			}
+
+			let diff = sector.max - sector.value;
+			if (diff === 0) {
+				return;
+			}
+
+			let recovery = Math.min(basicRecovery, Math.pow(diff, 2));
+			sector.value += Math.min(recovery, diff);
+		});
+	}
+
 	draw() {
 		let canvas = this.game.canvas;
 		let halfWidth = this.game.options.screenWidth / 2;
@@ -88,33 +148,47 @@ class Field extends GObject {
 			h: halfHeight * 2
 		};
 
-		let x2 = area.x + area.w;
-		let y2 = area.y + area.h;
-
-		//let points = this.tree.get(area);
-		let points = [];
-		let step = this.step;
-		for (let x = area.x; x < x2; x += step) {
-			for (let y = area.y; y < y2; y += step) {
-				points.push({x: x, y: y, w: step, h: step, text: this.getColor(x, y)});
-			}
-		}
+		let points = this.tree.get(area);
 
 		points.forEach((point)=>{
 			let screenPos = this.game.toScreenCoords(point.x, point.y);
 
-			canvas.drawRect(screenPos.x, screenPos.y, point.w, point.h, point.text);
+			let cenX = screenPos.x + point.w / 2;
+			let cenY = screenPos.y + point.h / 2;
+
+			let sector = this.sectors[point.id];
+			canvas.drawRect(screenPos.x, screenPos.y, point.w, point.h, this.getColorValue(sector.value));
+			canvas.drawText(cenX, cenY, sector.value.toFixed(3));
+		});
+	}
+
+	consume(x, y, radius, power) {
+		let area = {
+			x: x - radius,
+			y: y - radius,
+			w: radius * 2,
+			h: radius * 2
+		};
+
+		let tree = this.tree;
+		let points = tree.get(area);
+
+		let drainPower = power / points.length;
+		let drained = 0;
+		points.forEach((point)=>{
+			let sector = this.sectors[point.id];
+
+			let value = sector.value;
+			let power = Math.min(value, drainPower);
+			drained += power;
+			value -= power;
+
+			sector.value = value;
+			sector.drained = true;
 		});
 
-		this.dips.forEach((dip)=>{
-			let radius = dip.fade * FWHM;
-
-			log.debug(radius);
-
-			let screenPos = this.game.toScreenCoords(dip.x, dip.y);
-
-			canvas.strokeCircle(screenPos.x, screenPos.y, radius, '#fff');
-		});
+		log.debug('drained', drained);
+		return drained;
 	}
 }
 
