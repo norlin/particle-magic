@@ -1,4 +1,8 @@
 class Utils {
+	find(key, obj) {
+		return key.split('.').reduce((o, i)=>o[i], obj);
+	}
+
 	valueInRange(min, max, value) {
 		return Math.min(max, Math.max(min, value));
 	}

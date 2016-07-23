@@ -4,7 +4,8 @@ const map = {
 	RIGHT: 39,
 	DOWN: 40,
 	ENTER: 13,
-	SPACE: 32
+	SPACE: 32,
+	TAB: 9
 };
 
 class Keys {

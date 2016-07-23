@@ -1,4 +1,4 @@
-import Log from '../common/log';
+import Log from 'common/log';
 import GElement from './element.js';
 
 let log = new Log('Player');
@@ -13,24 +13,68 @@ class GPlayer extends GElement {
 			height: this.options.screenHeight
 		};
 
-		socket.on('setTarget', (point)=>{
+		this.listen();
+
+		let data = this.dataToSend({
+			id: this.id,
+			color: this.color,
+			radius: this.radius,
+			basicPower: this.basicPower,
+		});
+
+		socket.emit('createPlayer', data);
+	}
+
+	listen() {
+		this.socket.on('setTarget', (point)=>{
 			this.target = {
 				x: point.x,
 				y: point.y
 			};
 		});
 
-		socket.emit('createPlayer', {
-			id: this.id,
-			color: this.color,
-			startX: this._position.x,
-			startY: this._position.y,
-			radius: this.radius
+		this.socket.on('launchFire', (data)=>{
+			this.launchFire(data);
 		});
+	}
+
+	dataToSend(additional) {
+		return Object.assign({
+			x: this._position.x,
+			y: this._position.y,
+			targetX: this.target.x,
+			targetY: this.target.y,
+			fireCost: this.fireCost,
+			firePower: this.firePower,
+			fireDistance: this.fireDistance,
+			maxHealth: this.maxHealth,
+			health: this.health,
+			maxEnergy: this.maxEnergy,
+			energy: this.energy,
+			maxPower: this.maxPower,
+			power: this.power,
+		}, additional);
 	}
 
 	initParams() {
 		super.initParams();
+
+		let fields = [
+			'fireCost',
+			'firePower',
+			'fireDistance',
+			'maxHealth',
+			'health',
+			'maxEnergy',
+			'energy',
+			'maxPower',
+			'power',
+			'basicPower',
+		];
+
+		fields.forEach((field)=>{
+			this[field] = this.options[field];
+		});
 
 		this.target = {
 			x: this._position.x,
@@ -70,6 +114,21 @@ class GPlayer extends GElement {
 		this._position.y += deltaY;
 	}
 
+	launchFire(data) {
+		if (this.energy < this.fireCost) {
+			this.socket.emit('noEnergy');
+			return;
+		}
+
+		//this.fireDirection = data.direction;
+		//this.fire = true;
+		this.energy -= this.fireCost;
+		this.socket.emit('fire', {
+			energy: this.energy,
+			fireCost: this.fireCost
+		});
+	}
+
 	stopMovement() {
 		if (this.target.x == this._position.x && this.target.y == this._position.y) {
 			return;
@@ -86,24 +145,33 @@ class GPlayer extends GElement {
 		if (Math.abs(pos.x - this.target.x) < 1 && Math.abs(pos.y - this.target.y) < 1) {
 			this.stopMovement();
 		}
+
+		if (this.energy < this.maxEnergy) {
+			let drained = this.game.field.consume(pos.x, pos.y, Math.sqrt(this.power), this.power);
+			this.energy = Math.min(this.maxEnergy, this.energy + drained);
+		}
 	}
 
 	updateClient() {
 		let pos = this.pos();
-		let screen = {
-			width: this.screen.width,
-			height: this.screen.height
+
+		let halfWidth = this.screen.width / 2;
+		let halfHeight = this.screen.height / 2;
+
+		let offset = 50;
+
+		let area = {
+			left: pos.x - halfWidth - offset,
+			right: pos.x + halfWidth + offset,
+			top: pos.y - halfHeight - offset,
+			bottom: pos.y + halfHeight + offset
 		};
 
-		let objects = this.game.getVisibleObjects(this.id, pos, screen);
+		let data = this.dataToSend();
+		data.visible = this.game.getVisibleObjects(this.id, area);
+		data.sectors = this.game.field.getVisibleSectors(area);
 
-		this.socket.emit('updatePosition', {
-			x: pos.x,
-			y: pos.y,
-			targetX: this.target.x,
-			targetY: this.target.y,
-			visible: objects
-		});
+		this.socket.emit('update', data);
 	}
 }
 

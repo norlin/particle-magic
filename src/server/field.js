@@ -5,9 +5,6 @@ import QuadTree from 'simple-quadtree';
 
 let log = new Log('Field');
 
-const FWHM = 2*(Math.sqrt(2*Math.log(2)));
-const FWTM = 2*(Math.sqrt(2*Math.log(10)));
-
 class Field extends GObject {
 	constructor(game, options) {
 		super(game, options);
@@ -16,10 +13,8 @@ class Field extends GObject {
 
 		let width = this.options.width;
 		let height = this.options.height;
-		this.tree = QuadTree(0, 0, width, height);
 
-		let step = this.step = 100;
-		let fadeStep = 100;
+		this.sectorSize = 100;
 
 		this.dips = [{
 			x: 500,
@@ -33,15 +28,26 @@ class Field extends GObject {
 			power: 1000
 		}];
 
+		this.tree = QuadTree(0, 0, width, height);
+
+		this.generateField();
+	}
+
+	generateField() {
+		let width = this.options.width;
+		let height = this.options.height;
+
+		let sectorSize = this.sectorSize;
+
 		let i = 0;
-		for (let x = 0; x < width; x += step) {
-			for (let y = 0; y < height; y += step) {
+		for (let x = 0; x < width; x += sectorSize) {
+			for (let y = 0; y < height; y += sectorSize) {
 				this.tree.put({
 					id: i,
 					x: x,
 					y: y,
-					w: step,
-					h: step
+					w: sectorSize,
+					h: sectorSize
 				});
 				let value = this.getValue(x, y);
 				this.sectors.push({max: value, value: value});
@@ -75,48 +81,6 @@ class Field extends GObject {
 		return value;
 	}
 
-	getColor(x, y) {
-		var value = this.field(x, y);
-
-		let bg = Math.floor((1-value) * 170);
-		let color = Math.floor((value/2) * 255);
-
-		var hex = color.toString(16);
-		if (hex.length < 2) {
-			hex = '0'+hex;
-		}
-
-		let bgHex = bg.toString(16);
-		if (bgHex.length < 2) {
-			bgHex = '0'+bgHex;
-		}
-
-		return `#${hex}${bgHex}${bgHex}`;
-	}
-
-	getColorValue(value) {
-		let s = 1000/255;
-
-		let r = 0;
-		let g = 0;
-		let b = 0;
-
-		let parts = Math.ceil(value / 1000);
-		if (parts==1) {
-			r = Math.round(value / s);
-			g = b = r;
-		} else if (parts == 2) {
-			r = 255;
-			g = Math.round((value-1000) / s);
-		} else if (parts >= 3) {
-			r = 255;
-			g = 255;
-			b = Math.min(255, Math.round((value-2000) / s));
-		}
-
-		return Utils.rgbToHex(r, g, b);
-	}
-
 	tick() {
 		let basicRecovery = 1;
 		this.sectors.forEach((sector)=>{
@@ -135,30 +99,20 @@ class Field extends GObject {
 		});
 	}
 
-	draw() {
-		let canvas = this.game.canvas;
-		let halfWidth = this.game.options.screenWidth / 2;
-		let halfHeight = this.game.options.screenHeight / 2;
+	getVisibleSectors(area) {
+		let sectors = this.tree.get({
+			x: area.left,
+			y: area.top,
+			w: area.right - area.left,
+			h: area.bottom - area.top
+		});
 
-		let pos = this.game.player.pos();
-		let area = {
-			x: pos.x - halfWidth,
-			y: pos.y - halfHeight,
-			w: halfWidth * 2,
-			h: halfHeight * 2
-		};
-
-		let points = this.tree.get(area);
-
-		points.forEach((point)=>{
-			let screenPos = this.game.toScreenCoords(point.x, point.y);
-
-			let cenX = screenPos.x + point.w / 2;
-			let cenY = screenPos.y + point.h / 2;
-
-			let sector = this.sectors[point.id];
-			canvas.drawRect(screenPos.x, screenPos.y, point.w, point.h, this.getColorValue(sector.value));
-			canvas.drawText(cenX, cenY, sector.value.toFixed(3));
+		return sectors.map((sector)=>{
+			return {
+				value: this.sectors[sector.id].value,
+				x: sector.x,
+				y: sector.y
+			};
 		});
 	}
 
@@ -187,9 +141,9 @@ class Field extends GObject {
 			sector.drained = true;
 		});
 
-		log.debug('drained', drained);
 		return drained;
 	}
 }
 
 export default Field;
+

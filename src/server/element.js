@@ -1,5 +1,5 @@
-import GObject from '../common/object.js';
-import Utils from '../common/utils';
+import GObject from 'common/object.js';
+import Utils from 'common/utils';
 
 class GElement extends GObject {
 	constructor(game, options) {

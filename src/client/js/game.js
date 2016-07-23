@@ -5,7 +5,6 @@ import Socket from './connection';
 import GPlayer from './player';
 import GElement from './element';
 import Canvas from './canvas';
-import Field from './field';
 
 let log = new Log('Game');
 
@@ -17,7 +16,10 @@ class Game extends GObject {
 		super(null, options);
 
 		this.objects = {};
+		this.sectors = [];
 		this.initCanvas();
+
+		this.debug = false;
 
 		this.connect();
 	}
@@ -27,17 +29,16 @@ class Game extends GObject {
 
 		log.debug(config);
 
-		this.field = new Field(this, {
-			width: config.width,
-			height: config.height
-		});
-
 		this.addKeyListener(Keys.ENTER, () => {
 			if (this.tickTimer) {
 				this.stop();
 			} else {
 				this.start();
 			}
+		}, true);
+
+		this.addKeyListener(Keys.TAB, () => {
+			this.debug = !this.debug;
 		}, true);
 
 		this.start();
@@ -50,28 +51,53 @@ class Game extends GObject {
 			throw 'No canvas found!';
 		}
 
-		el.width = this.options.screenWidth;
-		el.height = this.options.screenHeight;
-
 		this.canvas = new Canvas(this, {
 			canvas: el,
 			width: this.options.screenWidth,
-			height: this.options.screenHeight
+			height: this.options.screenHeight,
+			background: '#fff'
 		});
-		this.canvas.setBackgroundColor('#fff');
 
 		document.body.addEventListener('keydown', (e)=>this.onKeyDown(e), true);
 		document.body.addEventListener('keyup', (e)=>this.onKeyUp(e), true);
 		document.body.addEventListener('click', (e)=>this.onClick(e), true);
+		document.body.addEventListener('mousemove', (e)=>this.onMove(e), true);
 
-		window.addEventListener('resize', (e)=>{
-			this.options.screenWidth = document.body.offsetWidth;
-			this.options.screenHeight = document.body.offsetHeight;
+		window.addEventListener('resize', ()=>this.updateScreen());
+		this.updateScreen();
 
-			document.getElementById(this.options.canvas);
-			el.width = this.options.screenWidth;
-			el.height = this.options.screenHeight;
+		this.direction = 0;
+	}
+
+	updateScreen() {
+		this.options.screenWidth = document.body.offsetWidth;
+		this.options.screenHeight = document.body.offsetHeight;
+
+		this.centerX = this.options.screenWidth / 2;
+		this.centerY = this.options.screenHeight / 2;
+
+		this.canvas.updateSize(this.options.screenWidth, this.options.screenHeight);
+	}
+
+	fillPlayerData(player, data) {
+		let fields = [
+			'fireCost',
+			'firePower',
+			'fireDistance',
+			'maxHealth',
+			'health',
+			'maxEnergy',
+			'energy',
+			'maxPower',
+			'power',
+			'basicPower'
+		];
+
+		fields.forEach((field)=>{
+			player[field] = data[field];
 		});
+
+		return player;
 	}
 
 	connect() {
@@ -84,21 +110,27 @@ class Game extends GObject {
 				return;
 			}
 
-			this.addPlayer(new GPlayer(this, {
+			let playerData = {
 				id: data.id,
 				name: 'test',
 				color: data.color,
-				startX: data.startX,
-				startY: data.startY,
+				startX: data.x,
+				startY: data.y,
 				radius: data.radius
-			}));
+			};
+
+			playerData = this.fillPlayerData(playerData, data);
+
+			this.addPlayer(new GPlayer(this, this.socket, playerData));
 		});
 
-		this.socket.on('updatePosition', (data)=>{
+		this.socket.on('update', (data)=>{
 			this.player.target.x = data.targetX;
 			this.player.target.y = data.targetY;
 			this.player._position.x = data.x;
 			this.player._position.y = data.y;
+
+			this.fillPlayerData(this.player, data);
 
 			let visible = data.visible;
 
@@ -135,10 +167,8 @@ class Game extends GObject {
 					color: newObject.color
 				});
 			}
-		});
 
-		this.on('gameClick', (point)=>{
-			this.socket.emit('setTarget', point);
+			this.sectors = data.sectors||[];
 		});
 	}
 
@@ -158,7 +188,6 @@ class Game extends GObject {
 			return false;
 		}
 
-		log.debug('adding object...', object.id);
 		this.objects[object.id] = object;
 
 		return true;
@@ -202,6 +231,21 @@ class Game extends GObject {
 		if (this.tickTimer) {
 			this.emit(`keyup.${code}`);
 		}
+	}
+
+	onMove(mouse) {
+		let centerX = this.options.screenWidth / 2;
+		let centerY = this.options.screenHeight / 2;
+
+		let point = {
+			x: mouse.clientX,
+			y: mouse.clientY
+		};
+
+		let directionX = point.x - centerX;
+		let directionY = point.y - centerY;
+
+		this.direction = Math.atan2(directionX, directionY);
 	}
 
 	onClick(mouse) {
@@ -281,14 +325,12 @@ class Game extends GObject {
 			}
 		});
 
-		this.field.tick();
-
 		// separate player & viewpoint
-		if (this.player) {
+		/*if (this.player) {
 			this.field.draw();
-		}
+		}*/
 
-		//this.drawGrid();
+		this.drawGrid();
 		this.drawBorder();
 
 		let elements = [];
@@ -300,7 +342,7 @@ class Game extends GObject {
 			let top = Math.floor(pos.y);
 
 			this.canvas.drawText(10, this.options.screenHeight - 40, `Position: ${left} x ${top}`);
-			this.canvas.drawText(10, this.options.screenHeight - 20, `Energy: ${this.player.energy}/${this.player.maxEnergy}`);
+			this.canvas.drawText(10, this.options.screenHeight - 20, `Energy: ${Math.floor(this.player.energy)}/${this.player.maxEnergy}`);
 		} else {
 			this.canvas.drawText(this.options.screenWidth / 2, this.options.screenHeight / 2, 'No player');
 		}
@@ -315,11 +357,10 @@ class Game extends GObject {
 		let verticalStep = size;
 
 		let playerPos = this.player ? this.player.pos() : {
-			x: screenWidth / 2,
-			y: screenHeight / 2
+			x: this.centerX,
+			y: this.centerY
 		};
 
-		let lines = [];
 		let init = {x: -0 -playerPos.x, y: -0 -playerPos.y};
 
 		let ctx = this.canvas.ctx;
@@ -340,7 +381,12 @@ class Game extends GObject {
 
 		ctx.stroke();
 
-		this.canvas.add.apply(this.canvas, lines);
+		if (this.debug) {
+			this.sectors.forEach((sector)=>{
+				let pos = this.toScreenCoords(sector.x, sector.y);
+				this.canvas.drawText(pos.x+50, pos.y+50, Math.floor(sector.value));
+			});
+		}
 	}
 
 	drawBorder() {
@@ -359,41 +405,38 @@ class Game extends GObject {
 		ctx.strokeStyle = this.config.borderColor;
 
 		// Left
-		if (player.x <= options.screenWidth/2) {
-			ctx.moveTo(options.screenWidth/2 - player.x, options.screenHeight/2 - player.y);
-			ctx.lineTo(options.screenWidth/2 - player.x, config.height + options.screenHeight/2 - player.y);
+		if (player.x <= this.centerX) {
+			ctx.moveTo(this.centerX - player.x, this.centerY - player.y);
+			ctx.lineTo(this.centerX - player.x, config.height + this.centerY - player.y);
 		}
 
 		// Top
-		if (player.y <= options.screenHeight/2) {
-			ctx.moveTo(options.screenWidth/2 - player.x, options.screenHeight/2 - player.y);
-			ctx.lineTo(config.width + options.screenWidth/2 - player.x, options.screenHeight/2 - player.y);
+		if (player.y <= this.centerY) {
+			ctx.moveTo(this.centerX - player.x, this.centerY - player.y);
+			ctx.lineTo(config.width + this.centerX - player.x, this.centerY - player.y);
 		}
 
 		// Right
-		if (config.width - player.x <= options.screenWidth/2) {
-			ctx.moveTo(config.width + options.screenWidth/2 - player.x, options.screenHeight/2 - player.y);
-			ctx.lineTo(config.width + options.screenWidth/2 - player.x, config.height + options.screenHeight/2 - player.y);
+		if (config.width - player.x <= this.centerX) {
+			ctx.moveTo(config.width + this.centerX - player.x, this.centerY - player.y);
+			ctx.lineTo(config.width + this.centerX - player.x, config.height + this.centerY - player.y);
 		}
 
 		// Bottom
-		if (config.height - player.y <= options.screenHeight/2) {
-			ctx.moveTo(config.width + options.screenWidth/2 - player.x, config.height + options.screenHeight/2 - player.y);
-			ctx.lineTo(options.screenWidth/2 - player.x, config.height + options.screenHeight/2 - player.y);
+		if (config.height - player.y <= this.centerY) {
+			ctx.moveTo(config.width + this.centerX - player.x, config.height + this.centerY - player.y);
+			ctx.lineTo(this.centerX - player.x, config.height + this.centerY - player.y);
 		}
 
 		ctx.stroke();
 	}
 
 	toScreenCoords(x, y) {
-		let halfWidth = this.options.screenWidth / 2;
-		let halfHeight = this.options.screenHeight / 2;
-
 		let playerPos = this.player.pos();
 
 		return {
-			x: x - playerPos.x + halfWidth,
-			y: y - playerPos.y + halfHeight
+			x: x - playerPos.x + this.centerX,
+			y: y - playerPos.y + this.centerY
 		};
 	}
 }

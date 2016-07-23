@@ -8,10 +8,17 @@ class Canvas extends GObject {
 		super(game, options);
 
 		this.canvas = this.options.canvas;
-		this.width = this.options.width;
-		this.height = this.options.height;
+		this.updateSize(this.options.width, this.options.height);
 
 		this.init();
+	}
+
+	updateSize(w, h) {
+		this.canvas.width = this.width = this.options.width = w;
+		this.canvas.height = this.height = this.options.height = h;
+
+		this.centerX = this.width/2;
+		this.centerY = this.height/2;
 	}
 
 	init() {
@@ -21,6 +28,7 @@ class Canvas extends GObject {
 
 		this.pi2 = 2 * Math.PI;
 		this.ctx = this.canvas.getContext('2d');
+		this.setBackgroundColor(this.options.background);
 	}
 
 	clear() {
@@ -73,6 +81,21 @@ class Canvas extends GObject {
 		ctx.font = '12px Arial';
 		ctx.fillStyle = color || '#000';
 		ctx.fillText(text, x, y);
+	}
+
+	drawLine(x, y, vector, distance, color) {
+		let ctx = this.ctx;
+
+		let x2 = x + Math.sin(vector) * distance;
+		let y2 = y + Math.cos(vector) * distance;
+
+		ctx.beginPath();
+		ctx.moveTo(x, y);
+		ctx.lineTo(x2, y2);
+		ctx.setLineDash([5]);
+		ctx.strokeStyle = color || '#000';
+		ctx.stroke();
+		ctx.setLineDash([]);
 	}
 }
 

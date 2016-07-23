@@ -1,7 +1,7 @@
 import express from 'express';
 import socket from 'socket.io';
 import * as HTTP from 'http';
-import Log from '../common/log';
+import Log from 'common/log';
 import Game from './game';
 
 const log = new Log('Server');

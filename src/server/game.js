@@ -1,7 +1,8 @@
-import Log from '../common/log';
-import Utils from '../common/utils';
-import GObject from '../common/object';
+import Log from 'common/log';
+import Utils from 'common/utils';
+import GObject from 'common/object';
 import GPlayer from './player';
+import Field from './field';
 import QuadTree from 'simple-quadtree';
 
 let log = new Log('Game');
@@ -11,10 +12,17 @@ class Game extends GObject {
 		super(null, options);
 
 		this.config = this.options;
-
-		this.tree = QuadTree(0, 0, this.config.width, this.config.height);
+		this.sockets = {};
+		this.players = {};
 
 		this.objects = {};
+
+		this.field = new Field(this, {
+			width: this.config.width,
+			height: this.config.height
+		});
+
+		this.add(this.field);
 
 		this.addListeners(io);
 		this.start();
@@ -22,7 +30,8 @@ class Game extends GObject {
 
 	add(object) {
 		if (!object) {
-			throw "What should I add?";
+			log.error('What I should add?');
+			return false;
 		}
 
 		if (this.objects[object.id]) {
@@ -34,30 +43,94 @@ class Game extends GObject {
 		return true;
 	}
 
+	remove(id) {
+		if (!id) {
+			log.error('What I should remove?');
+			return false;
+		}
+
+		if (!this.objects[id]) {
+			return false;
+		}
+
+		if (this.players[id]) {
+			return this.removePlayer(id);
+		}
+
+		this.objects[id] = undefined;
+		delete this.objects[id];
+
+		return true;
+	}
+
+	removePlayer(id) {
+		let socket = this.sockets[id];
+		if (socket) {
+			socket.emit('died');
+			this.sockets[id] = undefined;
+			delete this.sockets[id];
+		}
+
+		let player = this.objects[id];
+
+		if (!player) {
+			log.error('No player found with id', id);
+			return false;
+		}
+
+		this.players[id] = undefined;
+		delete this.players[id];
+
+		if (!this.objects[id]) {
+			return false;
+		}
+		this.objects[id] = undefined;
+		delete this.objects[id];
+	}
+
 	addListeners(io) {
 		io.on('connection', (socket)=>this.connection(socket));
 	}
 
 	connection(socket) {
-		log.debug('A user connected!');
+		log.debug('A user connected!', socket.id);
+
+		this.sockets[socket.id] = socket;
 
 		socket.on('start', (data)=>this.onStart(socket, data));
-		socket.on('disconnect', function(){
-			log.debug('User disconnected');
-			// TODO: remove user from the game
+		socket.on('disconnect', ()=>{
+			log.debug('User disconnected', socket.id);
+
+			this.removePlayer(socket.id);
 		});
 
 		socket.emit('config', this.config);
 	}
 
 	onStart(socket, data) {
+		let basicPower = 0.1;
+
 		let player = new GPlayer(this, socket, {
+			id: socket.id,
 			screenWidth: data.screenWidth,
 			screenHeight: data.screenHeight,
 			startX: 100, // Utils.randomInRange(0, this.config.width),
 			startY: 100, //Utils.randomInRange(0, this.config.height),
-			radius: 20
+			radius: 20,
+
+			fireCost: 100,
+			firePower: 100,
+			fireDistance: 500,
+			maxHealth: 100,
+			health: 100,
+			maxEnergy: 500,
+			energy: 0,
+			basicPower: basicPower,
+			maxPower: basicPower * 100,
+			power: basicPower
 		});
+
+		this.players[player.id] = player;
 
 		this.add(player);
 	}
@@ -77,18 +150,8 @@ class Game extends GObject {
 		}
 	}
 
-	getVisibleObjects(id, pos, screen) {
+	getVisibleObjects(id, area) {
 		var objects = {};
-
-		let halfWidth = screen.width / 2;
-		let halfHeight = screen.height / 2;
-
-		let boundaries = {
-			left: pos.x - halfWidth - 20,
-			right: pos.x + halfWidth + 20,
-			top: pos.y - halfHeight - 20,
-			bottom: pos.y + halfHeight + 20
-		};
 
 		this.iterate((object)=>{
 			if (object.id == id) {
@@ -104,10 +167,10 @@ class Game extends GObject {
 
 			let radius = object.radius || 0;
 
-			if (pos.x + radius > boundaries.left &&
-				pos.x - radius < boundaries.right &&
-				pos.y + radius > boundaries.top &&
-				pos.y - radius < boundaries.bottom) {
+			if (pos.x + radius > area.left &&
+				pos.x - radius < area.right &&
+				pos.y + radius > area.top &&
+				pos.y - radius < area.bottom) {
 
 				objects[object.id] = {
 					id: object.id,

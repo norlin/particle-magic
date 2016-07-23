@@ -5,8 +5,10 @@ import Keys from './keys';
 let log = new Log('Player');
 
 class GPlayer extends GElement {
-	constructor(game, options) {
+	constructor(game, socket, options) {
 		super(game, options);
+
+		this.socket = socket;
 
 		this.addListeners();
 	}
@@ -14,11 +16,7 @@ class GPlayer extends GElement {
 	initParams() {
 		super.initParams();
 
-		this.maxEnergy = 500;
-		this.energy = 0;
-		this.basicPower = 10;
-		this.maxPower = this.basicPower * 20;
-		this.power = this.basicPower;
+		this.game.fillPlayerData(this, this.options);
 
 		this.target = {
 			x: this._position.x,
@@ -27,6 +25,21 @@ class GPlayer extends GElement {
 	}
 
 	addListeners() {
+		this.socket.on('noEnergy', ()=>{
+			log.info('No energy!');
+		});
+
+		this.socket.on('fire', (data)=>{
+			log.info('fire!', data.fireCost);
+			this.energy = data.energy;
+		});
+
+
+
+		this.game.addClickListener((point)=>{
+			this.socket.emit('setTarget', point);
+		}, true);
+
 		this.game.addClickListener((point) => {
 			if (this.target.mark) {
 				this.target.mark = undefined;
@@ -48,21 +61,14 @@ class GPlayer extends GElement {
 		}, true);
 
 		this.game.addKeyListener(Keys.SPACE, (event)=>{
-			/*if (this.fire) {
-				return;
-			}
-
-			if (this.accumulate) {
-				this.launchFire();
-			} else {
-				this.accumulate = true;
-			}*/
+			this.launchFire();
 		});
 	}
 
 	launchFire() {
-		/*this.accumulate = false;
-		this.fire = true;*/
+		this.socket.emit('launchFire', {
+			direction: this.game.direction
+		});
 	}
 
 	move() {
@@ -116,22 +122,6 @@ class GPlayer extends GElement {
 		// moves calculated on server
 		//this.move();
 
-		/*if (this.accumulate) {
-			if (this.power < this.maxPower) {
-				this.power += 1;
-			} else {
-				this.launchFire();
-			}
-		} else if (this.fire) {
-			if (this.power > this.basicPower) {
-				this.power = Math.max(this.power - 5, this.basicPower);
-			} else {
-				this.fire = false;
-			}
-		} else if (this.power > this.basicPower) {
-			this.power -= 1;
-		}*/
-
 		let pos = this.pos();
 		if (Math.abs(pos.x - this.target.x) < 1 && Math.abs(pos.y - this.target.y) < 1) {
 			this.stopMovement();
@@ -143,17 +133,14 @@ class GPlayer extends GElement {
 				this.target.mark.y = markPos.y;
 			}
 		}
-
-		if (this.energy < this.maxEnergy) {
-			let drained = this.game.field.consume(pos.x, pos.y, this.radius, 10);
-			this.energy = Math.min(this.maxEnergy, this.energy + drained);
-		}
 	}
 
 	draw(canvas) {
 		if (this.target.mark) {
 			this.game.canvas.drawCircle(this.target.mark.x, this.target.mark.y, this.target.mark.radius, this.target.mark.color);
 		}
+
+		this.game.canvas.drawLine(this.game.centerX, this.game.centerY, this.game.direction, 50, this.color);
 
 		super.draw(canvas);
 	}
