@@ -118,7 +118,7 @@ class Game extends GObject {
 			startY: 100, //Utils.randomInRange(0, this.config.height),
 			radius: 20,
 
-			fireCost: 100,
+			fireCost: 50,
 			firePower: 100,
 			fireDistance: 500,
 			maxHealth: 100,

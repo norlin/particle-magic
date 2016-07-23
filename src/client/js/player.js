@@ -1,6 +1,8 @@
 import Log from 'common/log';
 import GElement from './element';
 import Keys from './keys';
+import {Particle} from 'common/magic/particle';
+import Aim from './aim';
 
 let log = new Log('Player');
 
@@ -30,7 +32,7 @@ class GPlayer extends GElement {
 		});
 
 		this.socket.on('fire', (data)=>{
-			log.info('fire!', data.fireCost);
+			log.info('fire!', data.damage);
 			this.energy = data.energy;
 		});
 
@@ -66,9 +68,23 @@ class GPlayer extends GElement {
 	}
 
 	launchFire() {
-		this.socket.emit('launchFire', {
-			direction: this.game.direction
-		});
+		if (this.aim) {
+			// fire!
+			this.socket.emit('launchFire', {
+				direction: this.game.direction,
+				radius: this.aim.radius
+			});
+
+			this.aim = undefined;
+
+			return;
+		}
+
+		this.socket.emit('aimStart');
+
+		let particle = new Particle({type: 'fire'});
+
+		this.aim = new Aim(this, {color: particle.color});
 	}
 
 	move() {
@@ -133,6 +149,10 @@ class GPlayer extends GElement {
 				this.target.mark.y = markPos.y;
 			}
 		}
+
+		if (this.aim) {
+			this.aim.tick();
+		}
 	}
 
 	draw(canvas) {
@@ -140,9 +160,15 @@ class GPlayer extends GElement {
 			this.game.canvas.drawCircle(this.target.mark.x, this.target.mark.y, this.target.mark.radius, this.target.mark.color);
 		}
 
-		this.game.canvas.drawLine(this.game.centerX, this.game.centerY, this.game.direction, 50, this.color);
+		if (this.game.debug) {
+			this.game.canvas.drawLine(this.game.centerX, this.game.centerY, this.game.direction, 50, this.color);
+		}
 
 		super.draw(canvas);
+
+		if (this.aim) {
+			this.aim.draw(canvas);
+		}
 	}
 }
 

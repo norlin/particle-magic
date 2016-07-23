@@ -1,5 +1,6 @@
 import Log from 'common/log';
 import GElement from './element.js';
+import {ParticlesCloud} from 'common/magic/particle.js';
 
 let log = new Log('Player');
 
@@ -26,15 +27,26 @@ class GPlayer extends GElement {
 	}
 
 	listen() {
-		this.socket.on('setTarget', (point)=>{
+		let socket = this.socket;
+
+		socket.on('setTarget', (point)=>{
+			if (this.aim) {
+				return;
+			}
+
 			this.target = {
 				x: point.x,
 				y: point.y
 			};
 		});
 
-		this.socket.on('launchFire', (data)=>{
+		socket.on('launchFire', (data)=>{
 			this.launchFire(data);
+		});
+
+		socket.on('aimStart', ()=>{
+			this.aim = true;
+			this.stopMovement();
 		});
 	}
 
@@ -82,60 +94,32 @@ class GPlayer extends GElement {
 		};
 	}
 
-	move() {
-		let pos = this.pos();
-
-		let target = {
-			x: this.target.x - pos.x,
-			y: this.target.y - pos.y
-		};
-
-		if (!target.x && !target.y) {
-			return;
-		}
-
-		let slowDown = 1;
-
-		let dist = Math.sqrt(Math.pow(target.y, 2) + Math.pow(target.x, 2));
-		let deg = Math.atan2(target.y, target.x);
-
-		let deltaX = this._speed * Math.cos(deg) / slowDown;
-		let deltaY = this._speed * Math.sin(deg) / slowDown;
-
-		let radius = this.radius;
-		let delta = dist / (50 + radius);
-
-		if (dist < (50 + this.radius)) {
-			deltaX *= delta;
-			deltaY *= delta;
-		}
-
-		this._position.x += deltaX;
-		this._position.y += deltaY;
-	}
-
 	launchFire(data) {
+		if (!this.aim) {
+			return false;
+		}
+
+		this.aim = false;
 		if (this.energy < this.fireCost) {
 			this.socket.emit('noEnergy');
 			return;
 		}
 
-		//this.fireDirection = data.direction;
-		//this.fire = true;
+		let cloud = new ParticlesCloud(this, {
+			particle: 'fire',
+			count: this.fireCost,
+			radius: data.radius
+		});
+
+		cloud.setTarget(data.direction);
+		this.game.add(cloud);
+
 		this.energy -= this.fireCost;
 		this.socket.emit('fire', {
 			energy: this.energy,
-			fireCost: this.fireCost
+			fireCost: this.fireCost,
+			damage: cloud.power()
 		});
-	}
-
-	stopMovement() {
-		if (this.target.x == this._position.x && this.target.y == this._position.y) {
-			return;
-		}
-
-		this.target.x = this._position.x;
-		this.target.y = this._position.y;
 	}
 
 	tick() {

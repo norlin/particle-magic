@@ -69,8 +69,8 @@ grunt.initConfig({
 					expand: true,
 					cwd: 'src/',
 					src: [
-						'common/*.js',
-						'server/*.js',
+						'common/**/*.js',
+						'server/**/*.js',
 					],
 					dest: 'build/'
 				},
@@ -133,8 +133,8 @@ grunt.initConfig({
 	watch: {
 		js_client: {
 			files: [
-				'src/client/js/*.js',
-				'src/common/*.js',
+				'src/client/js/**/*.js',
+				'src/common/**/*.js',
 				'src/client/shaders/*.*'
 			],
 			tasks: [
@@ -147,8 +147,8 @@ grunt.initConfig({
 		},
 		js_server: {
 			files: [
-				'src/server/*.js',
-				'src/common/*.js',
+				'src/server/**/*.js',
+				'src/common/**/*.js',
 				'./index.js',
 				'./config.js'
 			],
@@ -161,7 +161,7 @@ grunt.initConfig({
 			},
 		},
 		css: {
-			files: ['src/client/css/*.less'],
+			files: ['src/client/css/**/*.less'],
 			tasks: ['less:client'],
 			options: {
 				spawn: false,

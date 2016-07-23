@@ -13,7 +13,7 @@ class GElement extends GObject {
 
 		this.radius = this.options.radius;
 
-		this._speed = 6.25;
+		this._speed = this.options.speed || 6.25;
 
 		this._position = {
 			x: this.options.startX || 0,
@@ -26,6 +26,51 @@ class GElement extends GObject {
 			x: this._position.x,
 			y: this._position.y
 		};
+	}
+
+	move() {
+		if (!this.target) {
+			return;
+		}
+
+		let pos = this.pos();
+
+		let target = {
+			x: this.target.x - pos.x,
+			y: this.target.y - pos.y
+		};
+
+		if (!target.x && !target.y) {
+			return;
+		}
+
+		let slowDown = 1;
+
+		let dist = Math.sqrt(Math.pow(target.y, 2) + Math.pow(target.x, 2));
+		let deg = Math.atan2(target.y, target.x);
+
+		let deltaX = this._speed * Math.cos(deg) / slowDown;
+		let deltaY = this._speed * Math.sin(deg) / slowDown;
+
+		let radius = this.radius;
+		let delta = dist / (50 + radius);
+
+		if (dist < (50 + this.radius)) {
+			deltaX *= delta;
+			deltaY *= delta;
+		}
+
+		this._position.x += deltaX;
+		this._position.y += deltaY;
+	}
+
+	stopMovement() {
+		if (this.target.x == this._position.x && this.target.y == this._position.y) {
+			return;
+		}
+
+		this.target.x = this._position.x;
+		this.target.y = this._position.y;
 	}
 }
 
