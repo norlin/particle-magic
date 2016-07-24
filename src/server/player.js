@@ -16,6 +16,8 @@ class GPlayer extends GElement {
 
 		this.listen();
 
+		this.hits = 0;
+
 		let data = this.dataToSend({
 			id: this.id,
 			color: this.color,
@@ -64,7 +66,7 @@ class GPlayer extends GElement {
 			maxEnergy: this.maxEnergy,
 			energy: this.energy,
 			maxPower: this.maxPower,
-			power: this.power,
+			power: this.power
 		}, additional);
 	}
 
@@ -123,6 +125,7 @@ class GPlayer extends GElement {
 	}
 
 	tick() {
+		this.hits = 0;
 		this.move();
 
 		let pos = this.pos();
@@ -140,15 +143,18 @@ class GPlayer extends GElement {
 		if (object.particle) {
 			switch (object.particle.type) {
 			case 'fire':
-				this.health -= object.power();
+				let power = object.power();
+				this.health -= power;
+
 				if (this.health <= 0) {
-					this.game.remove(this.id);
-					return;
+					this._needRemove = true;
 				}
+
+				this.hits += power;
 				break;
 			}
 
-			this.game.remove(object.id);
+			object._needRemove = true;
 		}
 	}
 
@@ -173,6 +179,7 @@ class GPlayer extends GElement {
 		};
 
 		let data = this.dataToSend();
+		data.hits = this.hits;
 		data.visible = this.game.getVisibleObjects(this.id, area);
 		data.sectors = this.game.field.getVisibleSectors(area);
 

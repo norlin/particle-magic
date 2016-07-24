@@ -62,6 +62,28 @@ class GElement extends GObject {
 
 		this._position.x += deltaX;
 		this._position.y += deltaY;
+
+		let min = 0 + this.radius;
+		let width = this.game.config.width;
+		let height = this.game.config.height;
+		let maxX = width - this.radius;
+		let maxY = height - this.radius;
+
+		if (this._position.x < min) {
+			this._position.x = min;
+			this.target.x = this._position.x;
+		} else if (this._position.x >= maxX) {
+			this._position.x = maxX;
+			this.target.x = this._position.x;
+		}
+
+		if (this._position.y < min) {
+			this._position.y = min;
+			this.target.y = this._position.y;
+		} else if (this._position.y >= maxY) {
+			this._position.y = maxY;
+			this.target.y = this._position.y;
+		}
 	}
 
 	area() {

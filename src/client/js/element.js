@@ -1,4 +1,5 @@
-import GObject from 'common/object.js';
+import GObject from 'common/object';
+import Notify from './notify';
 
 class GElement extends GObject {
 	constructor(game, options) {
@@ -8,6 +9,8 @@ class GElement extends GObject {
 	}
 
 	initParams() {
+		this.hits = this.options.hits;
+
 		this.color = this.options.color;
 
 		this.radius = this.options.radius;
@@ -32,6 +35,17 @@ class GElement extends GObject {
 		let screenPos = this.game.toScreenCoords(gamePos.x, gamePos.y);
 
 		canvas.drawCircle(screenPos.x, screenPos.y, this.radius, this.color);
+
+		if (this.hits) {
+			new Notify(this.game, {
+				x: screenPos.x,
+				y: screenPos.y,
+				text: `-${Math.round(this.hits)}`,
+				timeout: 1000
+			});
+
+			this.hits = undefined;
+		}
 	}
 
 	tick() {}

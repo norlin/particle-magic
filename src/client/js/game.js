@@ -21,6 +21,7 @@ class Game extends GObject {
 		};
 
 		this.objects = {};
+		this.objectsUI = {};
 		this.sectors = [];
 		this.initCanvas();
 
@@ -95,7 +96,8 @@ class Game extends GObject {
 			'energy',
 			'maxPower',
 			'power',
-			'basicPower'
+			'basicPower',
+			'hits'
 		];
 
 		fields.forEach((field)=>{
@@ -168,6 +170,7 @@ class Game extends GObject {
 					existing._position.y = newObject.y;
 					existing.radius = newObject.radius;
 					existing.color = newObject.color;
+					existing.hits = newObject.hits;
 					continue;
 				}
 
@@ -176,7 +179,8 @@ class Game extends GObject {
 					startX: newObject.x,
 					startY: newObject.y,
 					radius: newObject.radius,
-					color: newObject.color
+					color: newObject.color,
+					hits: newObject.hits
 				});
 			}
 
@@ -184,34 +188,44 @@ class Game extends GObject {
 		});
 	}
 
-	iterate(method) {
-		for (let id in this.objects) {
-			method(this.objects[id]);
+	iterate(method, objects) {
+		objects = objects || this.objects;
+
+		for (let id in objects) {
+			method(objects[id]);
 		}
 	}
 
-	add(object) {
+	iterateUI(method) {
+		return this.iterate(method, this.objectsUI);
+	}
+
+	add(object, ui) {
 		if (!object) {
 			throw "What should I add?";
 		}
 
-		if (this.objects[object.id]) {
+		let objects = ui ? this.objectsUI : this.objects;
+
+		if (objects[object.id]) {
 			log.debug('object already in the game');
 			return false;
 		}
 
-		this.objects[object.id] = object;
+		objects[object.id] = object;
 
 		return true;
 	}
 
-	remove(id) {
-		if (!this.objects[id]) {
+	remove(id, ui) {
+		let objects = ui ? 'objectsUI' : 'objects';
+
+		if (!this[objects][id]) {
 			return;
 		}
 
-		this.objects[id] = undefined;
-		delete this.objects[id];
+		this[objects][id] = undefined;
+		delete this[objects][id];
 	}
 
 	addPlayer(player) {
@@ -366,6 +380,8 @@ class Game extends GObject {
 		} else {
 			this.canvas.drawText(this.options.screenWidth / 2, this.options.screenHeight / 2, 'No player');
 		}
+
+		this.iterateUI((object)=>this.canvas.add(object));
 	}
 
 	drawGrid() {

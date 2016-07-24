@@ -193,6 +193,10 @@ class Game extends GObject {
 					radius: radius,
 					color: object.color
 				};
+
+				if (object.hits) {
+					objects[object.id].hits = object.hits;
+				}
 			}
 		});
 
@@ -218,6 +222,11 @@ class Game extends GObject {
 
 		// move objects
 		this.iterate((object)=>{
+			if (object._needRemove) {
+				this.remove(object.id);
+				return;
+			}
+
 			if (object.tick) {
 				object.tick();
 			}

@@ -60,8 +60,84 @@ class GPlayer extends GElement {
 			};
 		}, true);
 
+		// UP
+		this.game.addKeyListener(Keys.UP, ()=>{
+			this._keyUP = true;
+			this.setKeyboardTarget();
+		}, true);
+
+		this.game.addKeyUpListener(Keys.UP, ()=>{
+			this._keyUP = false;
+			this.setKeyboardTarget();
+		}, true);
+
+		// DOWN
+		this.game.addKeyListener(Keys.DOWN, ()=>{
+			this._keyDOWN = true;
+			this.setKeyboardTarget();
+		}, true);
+
+		this.game.addKeyUpListener(Keys.DOWN, ()=>{
+			this._keyDOWN = false;
+			this.setKeyboardTarget();
+		}, true);
+
+		// LEFT
+		this.game.addKeyListener(Keys.LEFT, ()=>{
+			this._keyLEFT = true;
+			this.setKeyboardTarget();
+		}, true);
+
+		this.game.addKeyUpListener(Keys.LEFT, ()=>{
+			this._keyLEFT = false;
+			this.setKeyboardTarget();
+		}, true);
+
+		// RIGHT
+		this.game.addKeyListener(Keys.RIGHT, ()=>{
+			this._keyRIGHT = true;
+			this.setKeyboardTarget();
+		}, true);
+
+		this.game.addKeyUpListener(Keys.RIGHT, ()=>{
+			this._keyRIGHT = false;
+			this.setKeyboardTarget();
+		}, true);
+
+		// FIRE
 		this.game.addKeyListener(Keys.SPACE, (event)=>{
-			this.launchFire();
+			if (!this.aim) {
+				this.launchFire();
+			}
+		});
+
+		this.game.addKeyUpListener(Keys.SPACE, (event)=>{
+			if (this.aim) {
+				this.launchFire();
+			}
+		});
+	}
+
+	setKeyboardTarget() {
+		let x = this._position.x;
+		let y = this._position.y;
+
+		if (this._keyUP) {
+			y -=  Number.MAX_VALUE;
+		}
+		if (this._keyDOWN) {
+			y +=  Number.MAX_VALUE;
+		}
+		if (this._keyLEFT) {
+			x -=  Number.MAX_VALUE;
+		}
+		if (this._keyRIGHT) {
+			x +=  Number.MAX_VALUE;
+		}
+
+		this.socket.emit('setTarget', {
+			x: x,
+			y: y
 		});
 	}
 
