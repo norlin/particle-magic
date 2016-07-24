@@ -4,6 +4,7 @@ import GObject from 'common/object';
 import GPlayer from './player';
 import Field from './field';
 import QuadTree from 'simple-quadtree';
+import Collisions from 'common/collisions';
 
 let log = new Log('Game');
 
@@ -17,9 +18,14 @@ class Game extends GObject {
 
 		this.objects = {};
 
+		let width = this.config.width;
+		let height = this.config.height;
+
+		this.tree = QuadTree(0, 0, width, height);
+
 		this.field = new Field(this, {
-			width: this.config.width,
-			height: this.config.height
+			width: width,
+			height: height
 		});
 
 		this.add(this.field);
@@ -35,6 +41,7 @@ class Game extends GObject {
 		}
 
 		if (this.objects[object.id]) {
+			log.error('Already added!');
 			return false;
 		}
 
@@ -54,7 +61,9 @@ class Game extends GObject {
 		}
 
 		if (this.players[id]) {
-			return this.removePlayer(id);
+			this.players[id].die();
+			this.players[id] = undefined;
+			delete this.players[id];
 		}
 
 		this.objects[id] = undefined;
@@ -63,9 +72,10 @@ class Game extends GObject {
 		return true;
 	}
 
-	removePlayer(id) {
+	disconnectPlayer(id) {
 		let socket = this.sockets[id];
 		if (socket) {
+			// TODO: unify with player.die()
 			socket.emit('died');
 			this.sockets[id] = undefined;
 			delete this.sockets[id];
@@ -101,21 +111,25 @@ class Game extends GObject {
 		socket.on('disconnect', ()=>{
 			log.debug('User disconnected', socket.id);
 
-			this.removePlayer(socket.id);
+			this.disconnectPlayer(socket.id);
 		});
 
 		socket.emit('config', this.config);
 	}
 
 	onStart(socket, data) {
+		if (this.players[socket.id]) {
+			return;
+		}
+
 		let basicPower = 0.1;
 
 		let player = new GPlayer(this, socket, {
 			id: socket.id,
 			screenWidth: data.screenWidth,
 			screenHeight: data.screenHeight,
-			startX: 100, // Utils.randomInRange(0, this.config.width),
-			startY: 100, //Utils.randomInRange(0, this.config.height),
+			startX: Utils.randomInRange(0, this.config.width),
+			startY: Utils.randomInRange(0, this.config.height),
 			radius: 20,
 
 			fireCost: 50,
@@ -191,13 +205,46 @@ class Game extends GObject {
 		}
 	}
 
+	tickCollision(target, collisions) {
+		if (target.collision) {
+			collisions.forEach((id)=>{
+				target.collision(this.objects[id]);
+			});
+		}
+	}
+
 	tick() {
+		this.tree.clear();
+
+		// move objects
 		this.iterate((object)=>{
 			if (object.tick) {
 				object.tick();
 			}
+
+			if (object._position) {
+				this.tree.put(object.area());
+			}
 		});
 
+		// check collisions
+		this.iterate((object)=>{
+			if (!object._position) {
+				return;
+			}
+
+			let otherObjects = this.tree.get(object.area());
+
+			if (otherObjects.length > 1) {
+				let collisions = Collisions.findCollisions(object, otherObjects);
+
+				if (collisions && collisions.length) {
+					this.tickCollision(object, collisions);
+				}
+			}
+		});
+
+		// update clients
 		this.iterate((object)=>{
 			if (object.updateClient) {
 				object.updateClient();

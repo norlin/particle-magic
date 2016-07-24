@@ -36,8 +36,6 @@ class GPlayer extends GElement {
 			this.energy = data.energy;
 		});
 
-
-
 		this.game.addClickListener((point)=>{
 			this.socket.emit('setTarget', point);
 		}, true);

@@ -64,6 +64,22 @@ class GElement extends GObject {
 		this._position.y += deltaY;
 	}
 
+	area() {
+		let radius = this.radius || 1;
+		let size = radius * 2;
+
+		return {
+			x: this._position.x - radius,
+			y: this._position.y - radius,
+			w: size,
+			h: size,
+			id: this.id,
+			radius: radius,
+			centerX: this._position.x,
+			centerY: this._position.y
+		};
+	}
+
 	stopMovement() {
 		if (this.target.x == this._position.x && this.target.y == this._position.y) {
 			return;

@@ -136,6 +136,27 @@ class GPlayer extends GElement {
 		}
 	}
 
+	collision(object) {
+		if (object.particle) {
+			switch (object.particle.type) {
+			case 'fire':
+				this.health -= object.power();
+				if (this.health <= 0) {
+					this.game.remove(this.id);
+					return;
+				}
+				break;
+			}
+
+			this.game.remove(object.id);
+		}
+	}
+
+	die() {
+		this.stopMovement();
+		this.socket.emit('died');
+	}
+
 	updateClient() {
 		let pos = this.pos();
 

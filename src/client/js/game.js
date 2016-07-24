@@ -15,6 +15,11 @@ class Game extends GObject {
 
 		super(null, options);
 
+		this.viewpoint = {
+			x: 0,
+			y: 0
+		};
+
 		this.objects = {};
 		this.sectors = [];
 		this.initCanvas();
@@ -124,6 +129,10 @@ class Game extends GObject {
 			this.addPlayer(new GPlayer(this, this.socket, playerData));
 		});
 
+		this.socket.on('died', ()=>{
+			this.onDie();
+		});
+
 		this.socket.on('update', (data)=>{
 			this.player.target.x = data.targetX;
 			this.player.target.y = data.targetY;
@@ -131,6 +140,9 @@ class Game extends GObject {
 			this.player._position.y = data.y;
 
 			this.fillPlayerData(this.player, data);
+
+			this.viewpoint.x = this.player._position.x;
+			this.viewpoint.y = this.player._position.y;
 
 			let visible = data.visible;
 
@@ -194,7 +206,7 @@ class Game extends GObject {
 	}
 
 	remove(id) {
-		if (!this.objects[id] || this.player.id == id) {
+		if (!this.objects[id]) {
 			return;
 		}
 
@@ -205,6 +217,9 @@ class Game extends GObject {
 	addPlayer(player) {
 		this.player = player;
 		this.add(player);
+
+		this.viewpoint.x = this.player._position.x;
+		this.viewpoint.y = this.player._position.y;
 	}
 
 	addMass(options) {
@@ -301,12 +316,16 @@ class Game extends GObject {
 			return;
 		}
 
+		this.tickTimer = window.setInterval(()=>this.tick(), 1000 / this.config.fps);
+
+		if (this.player) {
+			return;
+		}
+
 		this.socket.emit('start', {
 			screenWidth: this.options.screenWidth,
 			screenHeight: this.options.screenHeight
 		});
-
-		this.tickTimer = window.setInterval(()=>this.tick(), 1000 / this.config.fps);
 	}
 
 	stop() {
@@ -342,7 +361,8 @@ class Game extends GObject {
 			let top = Math.floor(pos.y);
 
 			this.canvas.drawText(10, this.options.screenHeight - 40, `Position: ${left} x ${top}`);
-			this.canvas.drawText(10, this.options.screenHeight - 20, `Energy: ${Math.floor(this.player.energy)}/${this.player.maxEnergy}`);
+			this.canvas.drawText(10, 20, `Health: ${Math.ceil(this.player.health)}/${this.player.maxHealth}`);
+			this.canvas.drawText(10, 40, `Energy: ${Math.floor(this.player.energy)}/${this.player.maxEnergy}`);
 		} else {
 			this.canvas.drawText(this.options.screenWidth / 2, this.options.screenHeight / 2, 'No player');
 		}
@@ -367,7 +387,7 @@ class Game extends GObject {
 
 		ctx.beginPath();
 		ctx.lineWidth = 1;
-		ctx.strokeStyle = this.config.borderColor;
+		ctx.strokeStyle = this.config.gridColor;
 
 		for (let x = init.x; x < screenWidth; x += horizontalStep) {
 			ctx.moveTo(x, 0);
@@ -432,12 +452,19 @@ class Game extends GObject {
 	}
 
 	toScreenCoords(x, y) {
-		let playerPos = this.player.pos();
+		let view = this.viewpoint;
 
 		return {
-			x: x - playerPos.x + this.centerX,
-			y: y - playerPos.y + this.centerY
+			x: x - view.x + this.centerX,
+			y: y - view.y + this.centerY
 		};
+	}
+
+	onDie() {
+		this.stop();
+		this.remove(this.player.id);
+		this.player = undefined;
+		this.tick();
 	}
 }
 

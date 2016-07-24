@@ -77,6 +77,7 @@ class ParticlesCloud extends GElement {
 
 	stopMovement() {
 		if (this.target.x == this._position.x && this.target.y == this._position.y) {
+			this.blast();
 			return;
 		}
 
