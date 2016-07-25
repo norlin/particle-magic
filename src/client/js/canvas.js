@@ -83,16 +83,27 @@ class Canvas extends GObject {
 		ctx.fillText(text, x, y);
 	}
 
-	drawLine(x, y, vector, distance, color) {
+	drawLine(options) {
+		let x = options.x;
+		let y = options.y;
+		let vector = options.vector;
+		let distance = options.distance || 100;
+		let color = options.color;
+		let width = options.width;
+		let solid = options.solid;
+
 		let ctx = this.ctx;
 
-		let x2 = x + Math.sin(vector) * distance;
-		let y2 = y + Math.cos(vector) * distance;
+		let x2 = vector ? x + Math.sin(vector) * distance : options.x2;
+		let y2 = vector ? y + Math.cos(vector) * distance : options.y2;
 
 		ctx.beginPath();
 		ctx.moveTo(x, y);
 		ctx.lineTo(x2, y2);
-		ctx.setLineDash([5]);
+		if (!solid) {
+			ctx.setLineDash([5]);
+		}
+		ctx.lineWidth = width || 1;
 		ctx.strokeStyle = color || '#000';
 		ctx.stroke();
 		ctx.setLineDash([]);

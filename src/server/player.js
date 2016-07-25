@@ -8,6 +8,8 @@ class GPlayer extends GElement {
 	constructor(game, socket, options) {
 		super(game, options);
 
+		this.type = 'player';
+
 		this.socket = socket;
 		this.screen = {
 			width: this.options.screenWidth,
@@ -164,6 +166,17 @@ class GPlayer extends GElement {
 	}
 
 	updateClient() {
+		let data = this.dataToSend();
+		data.hits = this.hits;
+
+		let area = this.viewport();
+		data.visible = this.game.getVisibleObjects(this.id, area);
+		data.sectors = this.game.field.getVisibleSectors(area);
+
+		this.socket.emit('update', data);
+	}
+
+	viewport() {
 		let pos = this.pos();
 
 		let halfWidth = this.screen.width / 2;
@@ -171,19 +184,12 @@ class GPlayer extends GElement {
 
 		let offset = 50;
 
-		let area = {
+		return {
 			left: pos.x - halfWidth - offset,
 			right: pos.x + halfWidth + offset,
 			top: pos.y - halfHeight - offset,
 			bottom: pos.y + halfHeight + offset
 		};
-
-		let data = this.dataToSend();
-		data.hits = this.hits;
-		data.visible = this.game.getVisibleObjects(this.id, area);
-		data.sectors = this.game.field.getVisibleSectors(area);
-
-		this.socket.emit('update', data);
 	}
 }
 

@@ -20,6 +20,7 @@ class Game extends GObject {
 			y: 0
 		};
 
+		this.targetDirections = [];
 		this.objects = {};
 		this.objectsUI = {};
 		this.sectors = [];
@@ -156,14 +157,21 @@ class Game extends GObject {
 					return;
 				}
 
-				if (!visible[id]) {
+				if (!visible[id] || !visible[id].x) {
 					this.remove(id);
 				}
 			});
 
+			this.targetDirections = [];
+
 			for (let id in visible) {
 				let newObject = visible[id];
 				let existing = this.objects[id];
+
+				if (newObject.direction) {
+					this.targetDirections.push(newObject);
+					continue;
+				}
 
 				if (existing) {
 					existing._position.x = newObject.x;
@@ -381,11 +389,82 @@ class Game extends GObject {
 			this.canvas.drawText(this.options.screenWidth / 2, this.options.screenHeight / 2, 'No player');
 		}
 
+		let x = this.centerX;
+		let y = this.centerY;
+
+		let rad45 = Math.PI/4;
+		let rad90 = Math.PI/2;
+		let rad135 = Math.PI - rad45;
+
+		let targetWidth = 50;
+
+		this.targetDirections.forEach((target)=>{
+			let d = target.direction;
+			let sector = d > -rad45 && d < rad45 ? 1 : (d >= rad45 && d < rad135 ? 2 : (d >= rad135 || d < -rad135 ? 3 : 4));
+
+			let angle;
+			let side;
+			let targetW;
+			let targetH;
+			switch (sector) {
+			case 1:
+				angle = target.direction;
+				side = this.centerY;
+				targetW = targetWidth;
+				targetH = 0;
+				break;
+			case 2:
+				angle = target.direction - rad90;
+				side = this.centerX;
+				targetW = 0;
+				targetH = targetWidth;
+				break;
+			case 3:
+				if (target.direction > 0) {
+					angle = target.direction - Math.PI;
+				} else {
+					angle = target.direction + Math.PI;
+				}
+				side = this.centerY;
+				targetW = targetWidth;
+				targetH = 0;
+				break;
+			case 4:
+				angle = target.direction + rad90;
+				side = this.centerX;
+				targetW = 0;
+				targetH = targetWidth;
+				break;
+			}
+			let length = side / Math.cos(angle);
+
+			let x2 = x + Math.sin(target.direction) * length;
+			let y2 = y + Math.cos(target.direction) * length;
+
+			this.canvas.drawLine({
+				x: x2-targetW/2,
+				y: y2-targetH/2,
+				x2: x2+targetW/2,
+				y2: y2+targetH/2,
+				solid: true,
+				color: target.color,
+				width: 5
+			});
+
+			if (this.debug) {
+				let x2 = x + Math.sin(target.direction) * 200;
+				let y2 = y + Math.cos(target.direction) * 200;
+				let deg = d * 180 / Math.PI;
+				this.canvas.drawText(x2, y2, 'deg: '+deg);
+				this.canvas.drawLine(x, y, target.direction, 1000, target.color);
+			}
+		});
+
 		this.iterateUI((object)=>this.canvas.add(object));
 	}
 
 	drawGrid() {
-		let size = this.options.gridSize || 50;
+		let size = this.options.gridSize || 32;
 		let screenWidth = this.options.screenWidth;
 		let screenHeight = this.options.screenHeight;
 

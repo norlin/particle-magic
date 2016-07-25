@@ -167,6 +167,12 @@ class Game extends GObject {
 	getVisibleObjects(id, area) {
 		var objects = {};
 
+		let player = this.players[id];
+		let currentPos;
+		if (player) {
+			currentPos = player.pos();
+		}
+
 		this.iterate((object)=>{
 			if (object.id == id) {
 				// skip current player
@@ -197,6 +203,17 @@ class Game extends GObject {
 				if (object.hits) {
 					objects[object.id].hits = object.hits;
 				}
+			} else if (object.type == 'player' && currentPos) {
+				let directionX = pos.x - currentPos.x;
+				let directionY = pos.y - currentPos.y;
+
+				let direction = Math.atan2(directionX, directionY);
+
+				objects[object.id] = {
+					id: object.id,
+					direction: direction,
+					color: object.color
+				};
 			}
 		});
 
