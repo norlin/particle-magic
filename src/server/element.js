@@ -1,5 +1,8 @@
+import Log from 'common/log';
 import GObject from 'common/object.js';
 import Utils from 'common/utils';
+
+let log = new Log('Element');
 
 class GElement extends GObject {
 	constructor(game, options) {
@@ -63,26 +66,24 @@ class GElement extends GObject {
 		this._position.x += deltaX;
 		this._position.y += deltaY;
 
-		let min = 0 + this.radius;
 		let width = this.game.config.width;
 		let height = this.game.config.height;
-		let maxX = width - this.radius;
-		let maxY = height - this.radius;
 
-		if (this._position.x < min) {
-			this._position.x = min;
-			this.target.x = this._position.x;
-		} else if (this._position.x >= maxX) {
-			this._position.x = maxX;
-			this.target.x = this._position.x;
+		// jump behind the edges
+		if (this._position.x <= 0) {
+			this._position.x = width-1;
+			this.target.x = width + this.target.x;
+		} else if (this._position.x >= width) {
+			this._position.x = 1;
+			this.target.x = this.target.x - width;
 		}
 
-		if (this._position.y < min) {
-			this._position.y = min;
-			this.target.y = this._position.y;
-		} else if (this._position.y >= maxY) {
-			this._position.y = maxY;
-			this.target.y = this._position.y;
+		if (this._position.y <= 0) {
+			this._position.y = height-1;
+			this.target.y = height + this.target.y;
+		} else if (this._position.y >= height) {
+			this._position.y = 1;
+			this.target.y = this.target.y - height;
 		}
 	}
 

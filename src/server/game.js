@@ -173,6 +173,22 @@ class Game extends GObject {
 			currentPos = player.pos();
 		}
 
+		if (area.left < 0) {
+			area.left = this.config.width + area.left;
+		}
+
+		if (area.top < 0) {
+			area.top = this.config.height + area.top;
+		}
+
+		if (area.right > this.config.width) {
+			area.right = area.right - this.config.width;
+		}
+
+		if (area.bottom > this.config.height) {
+			area.bottom = area.bottom - this.config.height;
+		}
+
 		this.iterate((object)=>{
 			if (object.id == id) {
 				// skip current player
@@ -187,11 +203,28 @@ class Game extends GObject {
 
 			let radius = object.radius || 0;
 
-			if (pos.x + radius > area.left &&
-				pos.x - radius < area.right &&
-				pos.y + radius > area.top &&
-				pos.y - radius < area.bottom) {
+			let inArea = {
+				x: false,
+				y: false
+			};
 
+			let left = pos.x + radius;
+			let right = pos.x - radius;
+			let top = pos.y + radius;
+			let bottom = pos.y - radius;
+
+			if (area.left > area.right) {
+				inArea.x = ((left > area.left) && (right < this.config.width)) || ((left > 0) && (right < area.right));
+			} else {
+				inArea.x = (left > area.left) && (right < area.right);
+			}
+			if (area.top > area.bottom) {
+				inArea.y = ((top > area.top) && (bottom < this.config.height)) || ((top > 0) && (bottom < area.bottom));
+			} else {
+				inArea.y = (top > area.top) && (bottom < area.bottom);
+			}
+
+			if (inArea.x && inArea.y) {
 				objects[object.id] = {
 					id: object.id,
 					x: pos.x,

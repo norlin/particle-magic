@@ -549,6 +549,20 @@ class Game extends GObject {
 	toScreenCoords(x, y) {
 		let view = this.viewpoint;
 
+		let corrX = view.x - this.centerX;
+		if (x < corrX) {
+			x += this.config.width;
+		} else if (x > this.options.screenWidth + corrX) {
+			x -= this.config.width;
+		}
+
+		let corrY = view.y - this.centerY;
+		if (y < corrY) {
+			y += this.config.height;
+		} else if (y > this.options.screenHeight + corrY) {
+			y -= this.config.height;
+		}
+
 		return {
 			x: x - view.x + this.centerX,
 			y: y - view.y + this.centerY
