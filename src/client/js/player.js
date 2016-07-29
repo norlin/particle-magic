@@ -3,6 +3,7 @@ import GElement from './element';
 import Keys from './keys';
 import {Particle} from 'common/magic/particle';
 import Aim from './aim';
+import Target from './target';
 
 let log = new Log('Player');
 
@@ -41,22 +42,9 @@ class GPlayer extends GElement {
 		}, true);
 
 		this.game.addClickListener((point) => {
-			if (this.target.mark) {
-				this.target.mark = undefined;
-			}
-
 			this.target = {
 				x: point.x,
 				y: point.y
-			};
-
-			let markPos = this.game.toScreenCoords(this.target.x, this.target.y);
-
-			this.target.mark = {
-				radius: 2,
-				color: this.options.color,
-				x: markPos.x,
-				y: markPos.y
 			};
 		}, true);
 
@@ -161,10 +149,23 @@ class GPlayer extends GElement {
 		this.aim = new Aim(this, {color: particle.color});
 	}
 
-	stopMovement() {
-		log.info('stopMovement');
-
+	updateTarget() {
 		if (this.target.mark) {
+			this.target.mark.reset();
+			this.target.mark._position.x = this.target.x;
+			this.target.mark._position.y = this.target.y;
+		} else {
+			this.target.mark = new Target(this, {
+				startX: this.target.x,
+				startY: this.target.y,
+				color: this.color
+			});
+		}
+	}
+
+	stopMovement() {
+		if (this.target.mark) {
+			log.info('stopMovement');
 			this.target.mark = undefined;
 		}
 	}
@@ -172,15 +173,18 @@ class GPlayer extends GElement {
 	tick() {
 		// moves calculated on server
 
+		let radius = this.radius;
 		let pos = this.pos();
-		if (Math.abs(pos.x - this.target.x) < 1 && Math.abs(pos.y - this.target.y) < 1) {
+		if (Math.abs(pos.x - this.target.x) < radius && Math.abs(pos.y - this.target.y) < radius) {
 			this.stopMovement();
 		} else {
 			if (this.target.mark) {
-				let markPos = this.game.toScreenCoords(this.target.x, this.target.y);
+				this.target.mark._position.x = this.target.x;
+				this.target.mark._position.y = this.target.y;
 
-				this.target.mark.x = markPos.x;
-				this.target.mark.y = markPos.y;
+				this.target.mark.tick();
+			} else {
+				this.updateTarget();
 			}
 		}
 
@@ -190,18 +194,18 @@ class GPlayer extends GElement {
 	}
 
 	draw(canvas) {
-		if (this.target.mark) {
-			this.game.canvas.drawCircle(this.target.mark.x, this.target.mark.y, this.target.mark.radius, this.target.mark.color);
-		}
-
-		if (this.game.debug) {
-			this.game.canvas.drawLine(this.game.centerX, this.game.centerY, this.game.direction, 50, this.color);
-		}
-
 		super.draw(canvas);
 
 		if (this.aim) {
 			this.aim.draw(canvas);
+		}
+
+		if (this.target.mark) {
+			this.target.mark.draw(canvas);
+		}
+
+		if (this.game.debug) {
+			this.game.canvas.drawLine(this.game.centerX, this.game.centerY, this.game.direction, 50, this.color);
 		}
 	}
 }
