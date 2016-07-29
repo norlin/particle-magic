@@ -1,5 +1,10 @@
 import Game from './game';
+import Constructor from './constructor';
 
 window.addEventListener('load', function(){
-	new Game({canvas: 'canvas'});
+	if (document.getElementById('constructor')) {
+		new Constructor({canvas: 'constructor'});
+	} else {
+		new Game({canvas: 'canvas'});
+	}
 });

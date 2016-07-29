@@ -1,11 +1,9 @@
 import Log from 'common/log';
-import GObject from 'common/object.js';
 import Keys from './keys';
 import Socket from './connection';
 import GameBasics from './gameBasics';
 import GPlayer from './player';
 import GElement from './element';
-import Canvas from './canvas';
 
 let log = new Log('Game');
 

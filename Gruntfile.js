@@ -101,15 +101,11 @@ grunt.initConfig({
 			files: [
 				{
 					nonull: true,
-					dest: 'build/client/index.html',
-					src: 'src/client/index.html'
-				},
-				{
-					nonull: true,
 					expand: true,
 					cwd: 'src/',
 					src: [
 						'client/shaders/*.*',
+						'client/*.html'
 					],
 					dest: 'build/'
 				}
