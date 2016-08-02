@@ -1,5 +1,5 @@
 import Log from 'common/log';
-import GElement from './element';
+import Element from './element';
 import Keys from './keys';
 import {Particle} from 'common/magic/particle';
 import Aim from './aim';
@@ -7,7 +7,7 @@ import Target from './target';
 
 let log = new Log('Player');
 
-class GPlayer extends GElement {
+class ClientPlayer extends Element {
 	constructor(game, socket, options) {
 		super(game, options);
 
@@ -210,4 +210,4 @@ class GPlayer extends GElement {
 	}
 }
 
-export default GPlayer;
+export default ClientPlayer;

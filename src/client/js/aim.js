@@ -1,7 +1,7 @@
 import Log from 'common/log';
-import GElement from './element';
+import ClientElement from './element';
 
-class Aim extends GElement {
+class Aim extends ClientElement {
 	constructor(player, options) {
 		super(player.game, options);
 

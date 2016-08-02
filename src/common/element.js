@@ -1,10 +1,10 @@
 import Log from 'common/log';
-import GObject from 'common/object.js';
+import Entity from 'common/entity.js';
 import Utils from 'common/utils';
 
 let log = new Log('Element');
 
-class GElement extends GObject {
+class Element extends Entity {
 	constructor(game, options) {
 		super(game, options);
 
@@ -113,4 +113,4 @@ class GElement extends GObject {
 	}
 }
 
-export default GElement;
+export default Element;

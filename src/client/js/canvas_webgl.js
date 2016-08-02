@@ -2,7 +2,7 @@
 const fs = require('fs');
 import Log from 'common/log';
 import Utils from 'common/utils';
-import GObject from 'common/object.js';
+import Entity from 'common/entity.js';
 
 const shaders = {
 	vertex: fs.readFileSync(__dirname+'/../shaders/vertex.vert', 'utf8'),
@@ -11,7 +11,7 @@ const shaders = {
 
 let log = new Log('Canvas');
 
-class Canvas extends GObject {
+class Canvas extends Entity {
 	constructor(game, options) {
 		super(game, options);
 

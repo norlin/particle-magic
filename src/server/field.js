@@ -1,11 +1,11 @@
 import Log from 'common/log';
 import Utils from 'common/utils';
-import GObject from 'common/object';
+import Entity from 'common/entity';
 import QuadTree from 'simple-quadtree';
 
 let log = new Log('Field');
 
-class Field extends GObject {
+class Field extends Entity {
 	constructor(game, options) {
 		super(game, options);
 

@@ -1,9 +1,9 @@
 import Log from 'common/log';
-import GObject from 'common/object.js';
+import Entity from 'common/entity.js';
 
 let log = new Log('Canvas');
 
-class Canvas extends GObject {
+class Canvas extends Entity {
 	constructor(game, options) {
 		super(game, options);
 
@@ -68,11 +68,17 @@ class Canvas extends GObject {
 		ctx.stroke();
 	}
 
-	drawRect(x, y, w, h, color) {
+	drawRect(x, y, w, h, color, stroke, strokeColor) {
 		let ctx = this.ctx;
 
 		ctx.fillStyle = color;
 		ctx.fillRect(x, y, w, h);
+
+		if (stroke) {
+			ctx.lineWidth = stroke;
+			ctx.strokeStyle = strokeColor || '#000';
+			ctx.strokeRect(x+stroke, y+stroke, w-(stroke*2), h-(stroke*2));
+		}
 	}
 
 	drawText(x, y, text, color) {
@@ -94,8 +100,8 @@ class Canvas extends GObject {
 
 		let ctx = this.ctx;
 
-		let x2 = vector ? x + Math.sin(vector) * distance : options.x2;
-		let y2 = vector ? y + Math.cos(vector) * distance : options.y2;
+		let x2 = typeof(vector) == 'number' ? x + Math.sin(vector) * distance : options.x2;
+		let y2 = typeof(vector) == 'number' ? y + Math.cos(vector) * distance : options.y2;
 
 		ctx.beginPath();
 		ctx.moveTo(x, y);

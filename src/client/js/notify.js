@@ -1,18 +1,11 @@
 import Log from 'common/log';
-import GObject from 'common/object';
+import UIElement from './ui';
 
-class Notify extends GObject {
+class Notify extends UIElement {
 	constructor(game, options) {
 		super(game, options);
 
-		this.pos = {
-			x: this.options.x || this.game.centerX,
-			y: this.options.y || this.game.centerY
-		};
-
-		this.game.add(this, 'ui');
-
-		let timeout = this.options.timeout || 5000;
+		let timeout = typeof(this.options.timeout) == 'number' ? this.options.timeout : 5000;
 
 		if (timeout) {
 			this.timer = window.setTimeout(()=>this.hide(), timeout);
@@ -29,7 +22,7 @@ class Notify extends GObject {
 			this.timer = undefined;
 		}
 
-		this.game.remove(this.id, 'ui');
+		super.hide();
 	}
 }
 

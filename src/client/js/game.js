@@ -2,8 +2,8 @@ import Log from 'common/log';
 import Keys from './keys';
 import Socket from './connection';
 import GameBasics from './gameBasics';
-import GPlayer from './player';
-import GElement from './element';
+import ClientPlayer from './player';
+import Element from './element';
 
 let log = new Log('Game');
 
@@ -12,33 +12,8 @@ class Game extends GameBasics {
 		super(options);
 
 		this.targetDirections = [];
-		this.objects = {};
-		this.objectsUI = {};
-		this.sectors = [];
-
-		this.debug = false;
 
 		this.connect();
-	}
-
-	init(config) {
-		this.config = config;
-
-		log.debug(config);
-
-		this.addKeyListener(Keys.ENTER, () => {
-			if (this.tickTimer) {
-				this.stop();
-			} else {
-				this.start();
-			}
-		}, true);
-
-		this.addKeyListener(Keys.TAB, () => {
-			this.debug = !this.debug;
-		}, true);
-
-		this.start();
 	}
 
 	fillPlayerData(player, data) {
@@ -84,7 +59,7 @@ class Game extends GameBasics {
 
 			playerData = this.fillPlayerData(playerData, data);
 
-			this.addPlayer(new GPlayer(this, this.socket, playerData));
+			this.addPlayer(new ClientPlayer(this, this.socket, playerData));
 		});
 
 		this.socket.on('died', ()=>{
@@ -151,46 +126,6 @@ class Game extends GameBasics {
 		});
 	}
 
-	iterate(method, objects) {
-		objects = objects || this.objects;
-
-		for (let id in objects) {
-			method(objects[id]);
-		}
-	}
-
-	iterateUI(method) {
-		return this.iterate(method, this.objectsUI);
-	}
-
-	add(object, ui) {
-		if (!object) {
-			throw "What should I add?";
-		}
-
-		let objects = ui ? this.objectsUI : this.objects;
-
-		if (objects[object.id]) {
-			log.debug('object already in the game');
-			return false;
-		}
-
-		objects[object.id] = object;
-
-		return true;
-	}
-
-	remove(id, ui) {
-		let objects = ui ? 'objectsUI' : 'objects';
-
-		if (!this[objects][id]) {
-			return;
-		}
-
-		this[objects][id] = undefined;
-		delete this[objects][id];
-	}
-
 	addPlayer(player) {
 		this.player = player;
 		this.add(player);
@@ -200,7 +135,7 @@ class Game extends GameBasics {
 	}
 
 	addMass(options) {
-		let mass = new GElement(this, options);
+		let mass = new Element(this, options);
 
 		this.add(mass);
 	}
@@ -215,7 +150,7 @@ class Game extends GameBasics {
 			return;
 		}
 
-		this.tickTimer = window.setInterval(()=>this.tick(), 1000 / this.config.fps);
+		super.start();
 
 		if (this.player) {
 			return;
@@ -227,32 +162,8 @@ class Game extends GameBasics {
 		});
 	}
 
-	stop() {
-		if (this.tickTimer) {
-			window.clearInterval(this.tickTimer);
-			this.tickTimer = undefined;
-		}
-	}
-
 	tick() {
-		this.canvas.clear();
-
-		this.iterate((object)=>{
-			if (object.tick) {
-				object.tick();
-			}
-		});
-
-		// separate player & viewpoint
-		/*if (this.player) {
-			this.field.draw();
-		}*/
-
-		this.drawGrid();
-		this.drawBorder();
-
-		let elements = [];
-		this.iterate((object)=>this.canvas.add(object));
+		super.tick();
 
 		if (this.player) {
 			let pos = this.player.pos();
@@ -338,6 +249,17 @@ class Game extends GameBasics {
 		});
 
 		this.iterateUI((object)=>this.canvas.add(object));
+	}
+
+	drawGrid() {
+		super.drawGrid();
+
+		if (this.debug) {
+			this.sectors.forEach((sector)=>{
+				let pos = this.toScreenCoords(sector.x, sector.y);
+				this.canvas.drawText(pos.x+50, pos.y+50, Math.floor(sector.value));
+			});
+		}
 	}
 
 	onDie() {

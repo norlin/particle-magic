@@ -1,14 +1,14 @@
 import Log from 'common/log';
 import Utils from 'common/utils';
-import GObject from 'common/object';
-import GPlayer from './player';
+import Entity from 'common/entity';
+import Player from './player';
 import Field from './field';
 import QuadTree from 'simple-quadtree';
 import Collisions from 'common/collisions';
 
 let log = new Log('Game');
 
-class Game extends GObject {
+class Game extends Entity {
 	constructor(options, io) {
 		super(null, options);
 
@@ -124,7 +124,7 @@ class Game extends GObject {
 
 		let basicPower = 0.1;
 
-		let player = new GPlayer(this, socket, {
+		let player = new Player(this, socket, {
 			id: socket.id,
 			screenWidth: data.screenWidth,
 			screenHeight: data.screenHeight,

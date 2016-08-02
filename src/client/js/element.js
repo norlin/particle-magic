@@ -1,7 +1,7 @@
-import GObject from 'common/object';
+import Element from 'common/element';
 import Notify from './notify';
 
-class GElement extends GObject {
+class ClientElement extends Element {
 	constructor(game, options) {
 		super(game, options);
 
@@ -9,25 +9,9 @@ class GElement extends GObject {
 	}
 
 	initParams() {
+		super.initParams();
+
 		this.hits = this.options.hits;
-
-		this.color = this.options.color;
-
-		this.radius = this.options.radius;
-
-		this._speed = 6.25;
-
-		this._position = {
-			x: this.options.startX || 0,
-			y: this.options.startY || 0
-		};
-	}
-
-	pos() {
-		return {
-			x: this._position.x,
-			y: this._position.y
-		};
 	}
 
 	draw(canvas) {
@@ -51,4 +35,4 @@ class GElement extends GObject {
 	tick() {}
 }
 
-export default GElement;
+export default ClientElement;

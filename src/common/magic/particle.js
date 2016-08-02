@@ -1,6 +1,6 @@
 import Log from 'common/log';
 import Utils from 'common/utils';
-import GElement from 'server/element.js';
+import Element from 'common/element.js';
 
 let log = new Log('Particle');
 
@@ -28,7 +28,7 @@ class Particle {
 	}
 }
 
-class ParticlesCloud extends GElement {
+class ParticlesCloud extends Element {
 	constructor(player, options) {
 		let particle = new Particle({type: options.particle});
 		options.color = particle.color;

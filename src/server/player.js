@@ -1,10 +1,10 @@
 import Log from 'common/log';
-import GElement from './element.js';
+import Element from 'common/element.js';
 import {ParticlesCloud} from 'common/magic/particle.js';
 
 let log = new Log('Player');
 
-class GPlayer extends GElement {
+class Player extends Element {
 	constructor(game, socket, options) {
 		super(game, options);
 
@@ -193,4 +193,4 @@ class GPlayer extends GElement {
 	}
 }
 
-export default GPlayer;
+export default Player;

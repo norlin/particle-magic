@@ -1,10 +1,11 @@
 import EventEmitter from 'events';
+import Utils from './utils';
 
-class GObject extends EventEmitter {
+class Entity extends EventEmitter {
 	constructor(game, options) {
 		super();
 
-		this.id = options.id || 'uuid_'+Math.random();
+		this.id = options.id || Utils.uuid();
 
 		if (game) {
 			this.game = game;
@@ -14,4 +15,4 @@ class GObject extends EventEmitter {
 	}
 }
 
-export default GObject;
+export default Entity;
