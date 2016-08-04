@@ -5,6 +5,7 @@ import Player from './player';
 import Field from './field';
 import QuadTree from 'simple-quadtree';
 import Collisions from 'common/collisions';
+import 'common/magic/magic';
 
 let log = new Log('Game');
 
@@ -190,7 +191,7 @@ class Game extends Entity {
 		}
 
 		this.iterate((object)=>{
-			if (object.id == id) {
+			if (object.id == id || object.invisible) {
 				// skip current player
 				return;
 			}
@@ -281,7 +282,7 @@ class Game extends Entity {
 				object.tick();
 			}
 
-			if (object._position) {
+			if (object._position && !object.invisible) {
 				this.tree.put(object.area());
 			}
 		});

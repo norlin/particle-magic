@@ -1,52 +1,104 @@
-import Entity from 'common/object';
-import Action from './action';
+import Log from 'common/log';
+import Entity from 'common/entity';
+import Element from 'common/element';
 
-// TODO: allow to include skill into queue
-class Skill extends Entity {
-	constructor(game, options) {
-		super(game, options);
+let log = new Log('Skill');
 
-		this.queue = [];
+let skills = {};
+
+class Skill extends Element {
+	constructor(parent, options, nested) {
+		super(parent.game, options);
+
+		this.invisible = true;
+
+		this.parent = parent;
+		this.nested = nested;
+
+		this.queue = this.options.queue || [];
+
 		this.active = null;
+		log.debug('skill create');
 	}
 
-	start() {
+	init() {
+		this.done = false;
 		this.active = {};
-		this.current = 0;
+		this.current = -1;
+	}
 
-		this.next();
+	start(inited) {
+		if (!inited) {
+			this.init();
+		}
+
+		if (!this.nested) {
+			this.game.add(this);
+		}
 	}
 
 	next() {
+		this.current += 1;
 		let action = this.queue[this.current];
 
 		if (!action) {
+			log.debug('skill no next action', this.toString());
 			this.end();
 			return;
 		}
 
-		let actionInstance = new action.class(this.game, action.options);
+		let actionClass = skills[action.class];
+		let actionInstance = new actionClass(this.parent, action.options, true);
 
 		this.active[actionInstance.id] = actionInstance;
 
 		// TODO: rewrite it to promises?
-		// TODO: make possible to launch multiple actions at once?
-		actionInstance.on('next', ()=>{
-			actionInstance.off('next');
-			this.current += 1;
+		actionInstance.once('next', ()=>{
 			this.next();
 		});
 
-		actionInstance.on('end', ()=>{
-			actionInstance.off('end');
+		actionInstance.once('end', ()=>{
 			this.active[actionInstance.id] = undefined;
 			delete this.active[actionInstance.id];
 		});
+
+		actionInstance.start();
 	}
 
 	end() {
-		// TODO: check if all actions executed
+		if (!this.done) {
+			return;
+		}
+
+		if (this.active === null) {
+			log.debug('end, already ended');
+			return;
+		}
+
+		if (this.active && (Object.keys(this.active).length !== 0)) {
+			// wait for nested skills
+			log.debug('end, waiting for nested skills');
+			return;
+		}
+
 		this.active = null;
+
+		log.debug('emit end', this.toString());
+		this.emit('end');
+
+		if (!this.nested) {
+			log.debug('end, remove', this.toString());
+			this.game.remove(this.id);
+		}
+	}
+
+	action() {
+		if (this.done) {
+			return;
+		}
+
+		this.next();
+		this.done = true;
 	}
 
 	tick() {
@@ -54,11 +106,23 @@ class Skill extends Entity {
 			return;
 		}
 
+		this.action();
+
 		for (let name in this.active) {
 			let action = this.active[name];
 			action.tick();
 		}
+
+		this.end();
+	}
+
+	toString() {
+		return '[object Skill]';
 	}
 }
+
+Skill.register = function(name, skillClass) {
+	skills[name] = skillClass;
+};
 
 export default Skill;

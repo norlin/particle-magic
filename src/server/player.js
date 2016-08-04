@@ -1,6 +1,6 @@
 import Log from 'common/log';
 import Element from 'common/element.js';
-import {ParticlesCloud} from 'common/magic/particle.js';
+import Skill from 'common/magic/skill';
 
 let log = new Log('Player');
 
@@ -98,18 +98,27 @@ class Player extends Element {
 		};
 	}
 
+	drain(amount) {
+		if (this.energy < amount) {
+			return false;
+		}
+
+		this.energy -= amount;
+		return true;
+	}
+
 	launchFire(data) {
 		if (!this.aim) {
 			return false;
 		}
 
 		this.aim = false;
-		if (this.energy < this.fireCost) {
-			this.socket.emit('noEnergy');
-			return;
-		}
+		//if (this.energy < this.fireCost) {
+		//	this.socket.emit('noEnergy');
+		//	return;
+		//}
 
-		let cloud = new ParticlesCloud(this, {
+		/*let cloud = new ParticlesCloud(this, {
 			particle: 'fire',
 			count: this.fireCost,
 			radius: data.radius
@@ -118,17 +127,48 @@ class Player extends Element {
 		cloud.setTarget(data.direction);
 		this.game.add(cloud);
 
-		this.energy -= this.fireCost;
-		this.socket.emit('fire', {
-			energy: this.energy,
-			fireCost: this.fireCost,
-			damage: cloud.power()
+		if (this.drain(this.fireCost)) {
+			this.socket.emit('fire', {
+				energy: this.energy,
+				fireCost: this.fireCost,
+				damage: cloud.power()
+			});
+		}*/
+
+		let pos = this.pos();
+		let x = pos.x + Math.sin(data.direction) * 50;
+		let y = pos.y + Math.cos(data.direction) * 50;
+
+		let fireball = new Skill(this, {
+			startX: x,
+			startY: y,
+			queue: [
+				{
+					class: 'Collector',
+					options: {
+						startX: x,
+						startY: y,
+						duration: 20
+					}
+				}
+			]
 		});
+
+		log.debug('listen for end');
+		fireball.once('end', ()=>{
+			log.debug('on fireball end');
+			this.casting = false;
+		});
+
+		this.casting = true;
+		fireball.start();
 	}
 
 	tick() {
 		this.hits = 0;
-		this.move();
+		if (!this.casting) {
+			this.move();
+		}
 
 		let pos = this.pos();
 		if (Math.abs(pos.x - this.target.x) < 1 && Math.abs(pos.y - this.target.y) < 1) {
@@ -141,23 +181,18 @@ class Player extends Element {
 		}
 	}
 
-	collision(object) {
-		if (object.particle) {
-			switch (object.particle.type) {
-			case 'fire':
-				let power = object.power();
-				this.health -= power;
+	receiveDamage(amount) {
+		this.health -= amount;
 
-				if (this.health <= 0) {
-					this._needRemove = true;
-				}
-
-				this.hits += power;
-				break;
-			}
-
-			object._needRemove = true;
+		if (this.health <= 0) {
+			this._needRemove = true;
 		}
+
+		this.hits += amount;
+	}
+
+	collision(object) {
+
 	}
 
 	die() {

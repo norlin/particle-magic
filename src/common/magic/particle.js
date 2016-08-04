@@ -29,23 +29,23 @@ class Particle {
 }
 
 class ParticlesCloud extends Element {
-	constructor(player, options) {
+	constructor(parent, options) {
 		let particle = new Particle({type: options.particle});
 		options.color = particle.color;
 		options.speed = 15;
 
-		super(player.game, options);
+		super(parent.game, options);
 		options = this.options;
 
-		this.player = player;
+		this.parent = parent;
 
 		this.particle = particle;
 		this.radius = options.radius;
 		this.count = options.count;
 	}
 
-	distance() {
-		return Math.sqrt(this.volume() / this.count);
+	density() {
+		return 1 / Math.sqrt(this.volume() / this.count);
 	}
 
 	volume() {
@@ -53,18 +53,18 @@ class ParticlesCloud extends Element {
 	}
 
 	power() {
-		return (this.particle.damage * this.count) / this.distance();
+		return this.particle.damage * this.count * this.density();
 	}
 
 	setTarget(direction) {
-		let pos = this.player.pos();
-		let distance = this.player.radius + 50;
+		let pos = this.parent.pos();
 
-		let x = pos.x + Math.sin(direction) * distance;
-		let y = pos.y + Math.cos(direction) * distance;
+		let x = pos.x;
+		let y = pos.y;
 
-		let x2 = x + Math.sin(direction) * 1000;
-		let y2 = y + Math.cos(direction) * 1000;
+		let distance = Number.MAX_VALUE;
+		let x2 = x + Math.sin(direction) * distance;
+		let y2 = y + Math.cos(direction) * distance;
 
 		this._position.x = x;
 		this._position.y = y;
@@ -75,29 +75,15 @@ class ParticlesCloud extends Element {
 		};
 	}
 
-	stopMovement() {
-		if (this.target.x == this._position.x && this.target.y == this._position.y) {
-			this.blast();
-			return;
-		}
-
-		this.target.x = this._position.x;
-		this.target.y = this._position.y;
-
-		this.blast();
-	}
-
 	blast() {
-		this.game.remove(this.id);
+		//this.game.remove(this.id);
+		this.emit('blast');
+		this._needRemove = true;
 	}
 
 	tick() {
-		this.move();
-
-		let pos = this.pos();
-
-		if (Math.abs(pos.x - this.target.x) < 1 && Math.abs(pos.y - this.target.y) < 1) {
-			this.stopMovement();
+		if (this.target) {
+			this.move();
 		}
 	}
 
@@ -107,6 +93,24 @@ class ParticlesCloud extends Element {
 		}
 
 		super.draw(this.game.canvas);
+	}
+
+	collision(object){
+		switch (this.particle.type) {
+		case 'fire':
+			let power = this.power();
+			if (object.receiveDamage) {
+				object.receiveDamage(power);
+			}
+			break;
+		}
+
+		this.blast();
+	}
+
+	feed(amount) {
+		this.count += amount;
+		this.radius += amount;
 	}
 }
 
