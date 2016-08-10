@@ -13,7 +13,7 @@ class Aim extends ClientElement {
 	}
 
 	tick() {
-		this.radius += this.direction * 1;
+		/*this.radius += this.direction * 1;
 
 		if (this.radius >= this.maxRadius) {
 			this.radius = this.maxRadius;
@@ -21,20 +21,29 @@ class Aim extends ClientElement {
 		} else if (this.radius <= 1) {
 			this.radius = 1;
 			this.direction = 1;
-		}
+		}*/
 	}
 
 	draw(canvas) {
 		let pos = this.player.pos();
 		let direction = this.game.direction;
-		let distance = this.player.radius + 50;
+		//let distance = this.player.radius + 50;
 
-		let x = pos.x + Math.sin(direction) * distance;
-		let y = pos.y + Math.cos(direction) * distance;
+		//let x = pos.x + Math.sin(direction) * distance;
+		//let y = pos.y + Math.cos(direction) * distance;
 
-		let screenPos = this.game.toScreenCoords(x, y);
+		//let screenPos = this.game.toScreenCoords(x, y);
+		//this.game.canvas.strokeCircle(screenPos.x, screenPos.y, this.radius, this.color, 1);
 
-		this.game.canvas.strokeCircle(screenPos.x, screenPos.y, this.radius, this.color, 1);
+		let screenPos = this.game.toScreenCoords(pos.x, pos.y);
+		this.game.canvas.drawLine({
+			x: screenPos.x,
+			y: screenPos.y,
+			vector: direction,
+			distance: this.radius,
+			color: this.color,
+			solid: true
+		});
 	}
 }
 

@@ -1,5 +1,6 @@
+import Utils from 'common/utils';
 import Log from 'common/log';
-import Skill from 'common/magic/skill';
+import {Skill, SkillStates} from 'common/magic/skill';
 
 let log = new Log('Attractor');
 
@@ -8,37 +9,39 @@ class Attractor extends Skill {
 		super(parent, options, nested);
 
 		this.power = 1;
-
 		this.initCost = 10;
-	}
-
-	init() {
-		super.init();
-		this.duration = this.options.duration;
-
-		let parent = this.parent.pos();
-
-		this._position = {
-			x: this.options.startX || parent.x,
-			y: this.options.startY || parent.y
-		};
-	}
-
-	start() {
-		this.init();
-
-		if (this.parent.drain(this.initCost)) {
-			// TODO: find how to get required skill to attract
-		} else {
-			log.debug('attractor no energy for start');
-			// TODO: pufff!
-			this.done = true;
-			this.end();
-		}
+		this.actionCost = 10;
 	}
 
 	action() {
+		switch (this.state) {
+		case SkillStates.START:
+			this._attract();
+			break;
+		case SkillStates.DONE:
+		case SkillStates.END:
+		case SkillStates.ERR:
+			this.end();
+			break;
+		}
+	}
 
+	_attract() {
+		let target = this.parent.getObject(this.options.target);
+		if (!target) {
+			log.debug('cant find target skill');
+			this.state = SkillStates.ERR;
+			return;
+		}
+
+		if (this.caster.drain(this.actionCost)) {
+			let direction = Utils.getDirection(this.pos(), target.pos());
+			target.setTarget(direction);
+			this.state = SkillStates.DONE;
+		} else {
+			log.debug('no energy to push');
+			this.state = SkillStates.ERR;
+		}
 	}
 
 	toString() {

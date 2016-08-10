@@ -6,13 +6,15 @@ let log = new Log('Particle');
 
 const types = {
 	fire: {
-		color: '#f60'
+		color: '#f60',
+		power: 5
 	},
 	air: {
 		color: '#90C3D4'
 	},
 	water: {
-		color: '#246AE3'
+		color: '#246AE3',
+		power: 5
 	},
 	earth: {
 		color: '#785924'
@@ -23,7 +25,7 @@ class Particle {
 	constructor(options) {
 		this.type = options.type;
 
-		this.damage = 1;
+		this.power = types[this.type].power;
 		this.color = types[this.type].color;
 	}
 }
@@ -42,6 +44,9 @@ class ParticlesCloud extends Element {
 		this.particle = particle;
 		this.radius = options.radius;
 		this.count = options.count;
+
+		this.lifetime = 50;
+		this.timer = 0;
 	}
 
 	density() {
@@ -53,7 +58,7 @@ class ParticlesCloud extends Element {
 	}
 
 	power() {
-		return this.particle.damage * this.count * this.density();
+		return this.particle.power * this.count;// * this.density();
 	}
 
 	setTarget(direction) {
@@ -85,6 +90,11 @@ class ParticlesCloud extends Element {
 		if (this.target) {
 			this.move();
 		}
+
+		this.timer += 1;
+		if (this.timer > this.lifetime) {
+			this.blast();
+		}
 	}
 
 	draw() {
@@ -96,9 +106,16 @@ class ParticlesCloud extends Element {
 	}
 
 	collision(object){
+		let power;
 		switch (this.particle.type) {
 		case 'fire':
-			let power = this.power();
+			power = this.power();
+			if (object.receiveDamage) {
+				object.receiveDamage(power);
+			}
+			break;
+		case 'water':
+			power = -this.power();
 			if (object.receiveDamage) {
 				object.receiveDamage(power);
 			}
@@ -111,6 +128,8 @@ class ParticlesCloud extends Element {
 	feed(amount) {
 		this.count += amount;
 		this.radius += amount;
+
+		this.timer = 0;
 	}
 }
 

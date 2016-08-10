@@ -1,4 +1,5 @@
 import Log from 'common/log';
+import Utils from 'common/utils';
 import Entity from 'common/entity.js';
 import Keys from './keys';
 import Canvas from './canvas';
@@ -102,18 +103,15 @@ class GameBasics extends Entity {
 	}
 
 	onMove(mouse) {
-		let centerX = this.options.screenWidth / 2;
-		let centerY = this.options.screenHeight / 2;
+		let x = this.options.screenWidth / 2;
+		let y = this.options.screenHeight / 2;
 
 		let point = {
 			x: mouse.clientX,
 			y: mouse.clientY
 		};
 
-		let directionX = point.x - centerX;
-		let directionY = point.y - centerY;
-
-		this.direction = Math.atan2(directionX, directionY);
+		this.direction = Utils.getDirection({x, y}, point);
 	}
 
 	onClick(mouse) {

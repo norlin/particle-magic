@@ -6,123 +6,157 @@ let log = new Log('Skill');
 
 let skills = {};
 
+let SkillStates = {
+	IDLE: 0,
+	START: 1,
+	WAIT: 2,
+	DONE: 3,
+	END: 4,
+	ERR: -1
+};
+
 class Skill extends Element {
-	constructor(parent, options, nested) {
-		super(parent.game, options);
+	constructor(caster, options, parent) {
+		let pos = caster.pos();
+
+		super(caster.game, Object.assign({
+			startX: pos.x,
+			startY: pos.y
+		}, options));
 
 		this.invisible = true;
 
+		this.caster = caster;
 		this.parent = parent;
-		this.nested = nested;
+		this.state = SkillStates.IDLE;
 
-		this.queue = this.options.queue || [];
+		this.currentItem = 0;
+		this.queue = this.options.queue||[];
 
-		this.active = null;
-		log.debug('skill create');
-	}
-
-	init() {
-		this.done = false;
 		this.active = {};
-		this.current = -1;
+		this.objects = {};
+
+		this.initParams();
 	}
 
-	start(inited) {
-		if (!inited) {
-			this.init();
-		}
+	start() {
+		this.state = SkillStates.START;
 
-		if (!this.nested) {
+		if (this.parent) {
+			this.parent.add(this);
+		} else {
 			this.game.add(this);
 		}
 	}
 
 	next() {
-		this.current += 1;
-		let action = this.queue[this.current];
-
-		if (!action) {
-			log.debug('skill no next action', this.toString());
-			this.end();
+		let next = this.queue[this.currentItem];
+		if (!next) {
+			this.state = SkillStates.END;
 			return;
 		}
 
-		let actionClass = skills[action.class];
-		let actionInstance = new actionClass(this.parent, action.options, true);
+		this.currentItem += 1;
 
-		this.active[actionInstance.id] = actionInstance;
+		this.state = SkillStates.WAIT;
+		let skillClass = skills[next.class];
+		if (!skillClass || typeof(skillClass) != 'function') {
+			this.state = SkillStates.ERR;
+			return;
+		}
 
-		// TODO: rewrite it to promises?
-		actionInstance.once('next', ()=>{
-			this.next();
+		let skill = new skillClass(this.caster, next.options, this);
+		skill.once('end', ()=>{
+			this.state = SkillStates.DONE;
 		});
 
-		actionInstance.once('end', ()=>{
-			this.active[actionInstance.id] = undefined;
-			delete this.active[actionInstance.id];
-		});
-
-		actionInstance.start();
+		skill.start();
 	}
 
 	end() {
-		if (!this.done) {
-			return;
-		}
-
-		if (this.active === null) {
-			log.debug('end, already ended');
-			return;
-		}
-
-		if (this.active && (Object.keys(this.active).length !== 0)) {
-			// wait for nested skills
-			log.debug('end, waiting for nested skills');
-			return;
-		}
-
-		this.active = null;
-
-		log.debug('emit end', this.toString());
 		this.emit('end');
 
-		if (!this.nested) {
-			log.debug('end, remove', this.toString());
+		if (this.parent) {
+			this.parent.remove(this.id);
+		} else {
 			this.game.remove(this.id);
 		}
 	}
 
-	action() {
-		if (this.done) {
-			return;
+	add(skill) {
+		let id = skill.id;
+
+		if (this.active[id]) {
+			throw 'Skill already added: ' + skill + ' to ' + this;
 		}
 
-		this.next();
-		this.done = true;
+		this.active[id] = skill;
+	}
+
+	remove(id) {
+		if (!this.active[id]) {
+			throw 'Skill not found: ' + id + ' from ' + this;
+		}
+
+		this.active[id] = undefined;
+		delete this.active[id];
+	}
+
+	addObject(id, object) {
+		if (this.objects[id]) {
+			throw 'Object already added: ' + id + ' to ' + this;
+		}
+
+		this.objects[id] = object;
+	}
+
+	removeObject(id) {
+		if (!this.objects[id]) {
+			throw 'Object not found: ' + id + ' from ' + this;
+		}
+
+		this.objects[id] = undefined;
+		delete this.objects[id];
+	}
+
+	getObject(id) {
+		return this.objects[id];
+	}
+
+	action() {
+		switch (this.state) {
+		case SkillStates.START:
+			this.state = SkillStates.DONE;
+			break;
+		case SkillStates.DONE:
+			this.next();
+			break;
+		case SkillStates.END:
+		case SkillStates.ERR:
+			this.end();
+			break;
+		}
+
+		if (this.state > SkillStates.IDLE && this.state < SkillStates.END) {
+			for (let id in this.active) {
+				let skill = this.active[id];
+				skill.tick();
+			}
+		}
 	}
 
 	tick() {
-		if (this.active === null) {
-			return;
-		}
-
 		this.action();
-
-		for (let name in this.active) {
-			let action = this.active[name];
-			action.tick();
-		}
-
-		this.end();
 	}
 
 	toString() {
 		return '[object Skill]';
 	}
+
 }
 
 Skill.register = function(name, skillClass) {
 	skills[name] = skillClass;
 };
 
-export default Skill;
+export {Skill, SkillStates};

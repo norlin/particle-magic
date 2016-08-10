@@ -1,6 +1,6 @@
 import Log from 'common/log';
 import Element from 'common/element.js';
-import Skill from 'common/magic/skill';
+import {Skill} from 'common/magic/skill';
 
 let log = new Log('Player');
 
@@ -146,17 +146,25 @@ class Player extends Element {
 				{
 					class: 'Collector',
 					options: {
+						identifier: 'fire1',
 						startX: x,
 						startY: y,
-						duration: 20
+						duration: 10
+					}
+				},
+				{
+					class: 'Attractor',
+					//identifier: 'fire1',
+					options: {
+						target: 'fire1',
+						startX: pos.x,
+						startY: pos.y
 					}
 				}
 			]
 		});
 
-		log.debug('listen for end');
 		fireball.once('end', ()=>{
-			log.debug('on fireball end');
 			this.casting = false;
 		});
 
@@ -182,6 +190,7 @@ class Player extends Element {
 	}
 
 	receiveDamage(amount) {
+		log.debug('receiveDamage', amount);
 		this.health -= amount;
 
 		if (this.health <= 0) {
