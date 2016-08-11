@@ -50,7 +50,10 @@ class Field extends Entity {
 					h: sectorSize
 				});
 				let value = this.getValue(x, y);
-				this.sectors.push({max: value, value: value});
+				this.sectors.push({
+					max: value,
+					value: value
+				});
 				i += 1;
 			}
 		}

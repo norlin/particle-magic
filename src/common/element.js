@@ -1,6 +1,7 @@
 import Log from 'common/log';
 import Entity from 'common/entity.js';
 import Utils from 'common/utils';
+import Vector from 'common/vector';
 
 let log = new Log('Element');
 
@@ -18,17 +19,11 @@ class Element extends Entity {
 
 		this._speed = this.options.speed || 6.25;
 
-		this._position = {
-			x: this.options.startX || 0,
-			y: this.options.startY || 0
-		};
+		this._position = new Vector(this.options.startX, this.options.startY);
 	}
 
 	pos() {
-		return {
-			x: this._position.x,
-			y: this._position.y
-		};
+		return this._position.copy();
 	}
 
 	move() {
@@ -37,34 +32,23 @@ class Element extends Entity {
 		}
 
 		let pos = this.pos();
-
-		let target = {
-			x: this.target.x - pos.x,
-			y: this.target.y - pos.y
-		};
+		let target = new Vector(this.target.x - pos.x, this.target.y - pos.y);
 
 		if (!target.x && !target.y) {
 			return;
 		}
 
-		let slowDown = 1;
-
-		let dist = Math.sqrt(Math.pow(target.y, 2) + Math.pow(target.x, 2));
-		let deg = Math.atan2(target.y, target.x);
-
-		let deltaX = this._speed * Math.cos(deg) / slowDown;
-		let deltaY = this._speed * Math.sin(deg) / slowDown;
+		let dist = target.magnitude();
+		let delta = target.fromSelfAngle(this._speed);
 
 		let radius = this.radius;
-		let delta = dist / (50 + radius);
+		let deltaDist = dist / (50 + radius);
 
 		if (dist < (50 + this.radius)) {
-			deltaX *= delta;
-			deltaY *= delta;
+			delta.mult(deltaDist);
 		}
 
-		this._position.x += deltaX;
-		this._position.y += deltaY;
+		this._position.add(delta);
 
 		let width = this.game.config.width;
 		let height = this.game.config.height;
@@ -104,12 +88,11 @@ class Element extends Entity {
 	}
 
 	stopMovement() {
-		if (this.target.x == this._position.x && this.target.y == this._position.y) {
+		if (this.target.isEqual(this._position)) {
 			return;
 		}
 
-		this.target.x = this._position.x;
-		this.target.y = this._position.y;
+		this.target = this._position.copy();
 	}
 }
 

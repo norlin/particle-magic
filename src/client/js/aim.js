@@ -29,17 +29,16 @@ class Aim extends ClientElement {
 		let direction = this.game.direction;
 		//let distance = this.player.radius + 50;
 
-		//let x = pos.x + Math.sin(direction) * distance;
-		//let y = pos.y + Math.cos(direction) * distance;
+		//let x = pos.x + Math.cos(direction) * distance;
+		//let y = pos.y + Math.sin(direction) * distance;
 
 		//let screenPos = this.game.toScreenCoords(x, y);
 		//this.game.canvas.strokeCircle(screenPos.x, screenPos.y, this.radius, this.color, 1);
 
 		let screenPos = this.game.toScreenCoords(pos.x, pos.y);
 		this.game.canvas.drawLine({
-			x: screenPos.x,
-			y: screenPos.y,
-			vector: direction,
+			from: screenPos,
+			angle: direction,
 			distance: this.radius,
 			color: this.color,
 			solid: true

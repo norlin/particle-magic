@@ -1,4 +1,5 @@
 import Log from 'common/log';
+import Vector from 'common/vector';
 import Element from './element';
 import Keys from './keys';
 import {Particle} from 'common/magic/particle';
@@ -21,10 +22,7 @@ class ClientPlayer extends Element {
 
 		this.game.fillPlayerData(this, this.options);
 
-		this.target = {
-			x: this._position.x,
-			y: this._position.y
-		};
+		this.target = this.pos();
 	}
 
 	addListeners() {
@@ -42,10 +40,7 @@ class ClientPlayer extends Element {
 		}, true);
 
 		this.game.addClickListener((point) => {
-			this.target = {
-				x: point.x,
-				y: point.y
-			};
+			this.target = new Vector(point.x, point.y);
 		}, true);
 
 		// UP
@@ -202,10 +197,6 @@ class ClientPlayer extends Element {
 
 		if (this.target.mark) {
 			this.target.mark.draw(canvas);
-		}
-
-		if (this.game.debug) {
-			this.game.canvas.drawLine(this.game.centerX, this.game.centerY, this.game.direction, 50, this.color);
 		}
 	}
 }

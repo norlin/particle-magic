@@ -64,20 +64,10 @@ class ParticlesCloud extends Element {
 	setTarget(direction) {
 		let pos = this.parent.pos();
 
-		let x = pos.x;
-		let y = pos.y;
-
+		this._position = pos.copy();
 		let distance = Number.MAX_VALUE;
-		let x2 = x + Math.sin(direction) * distance;
-		let y2 = y + Math.cos(direction) * distance;
 
-		this._position.x = x;
-		this._position.y = y;
-
-		this.target = {
-			x: x2,
-			y: y2
-		};
+		this.target = pos.move(direction, distance);
 	}
 
 	blast() {

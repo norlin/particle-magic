@@ -35,7 +35,7 @@ class Attractor extends Skill {
 		}
 
 		if (this.caster.drain(this.actionCost)) {
-			let direction = Utils.getDirection(this.pos(), target.pos());
+			let direction = this.pos().directionTo(target.pos());
 			target.setTarget(direction);
 			this.state = SkillStates.DONE;
 		} else {

@@ -58,10 +58,6 @@ class Utils {
 			b: rgb.b / 255
 		} : null;
 	}
-
-	getDirection(pointA, pointB) {
-		return Math.atan2(pointB.x - pointA.x, pointB.y - pointA.y);
-	}
 }
 
 const instance = new Utils();

@@ -1,4 +1,5 @@
 import Log from 'common/log';
+import Vector from 'common/vector.js';
 import Element from 'common/element.js';
 import {Skill} from 'common/magic/skill';
 
@@ -38,10 +39,7 @@ class Player extends Element {
 				return;
 			}
 
-			this.target = {
-				x: point.x,
-				y: point.y
-			};
+			this.target = new Vector(point.x, point.y);
 		});
 
 		socket.on('launchFire', (data)=>{
@@ -92,10 +90,7 @@ class Player extends Element {
 			this[field] = this.options[field];
 		});
 
-		this.target = {
-			x: this._position.x,
-			y: this._position.y
-		};
+		this.target = this.pos();
 	}
 
 	drain(amount) {
@@ -113,42 +108,20 @@ class Player extends Element {
 		}
 
 		this.aim = false;
-		//if (this.energy < this.fireCost) {
-		//	this.socket.emit('noEnergy');
-		//	return;
-		//}
-
-		/*let cloud = new ParticlesCloud(this, {
-			particle: 'fire',
-			count: this.fireCost,
-			radius: data.radius
-		});
-
-		cloud.setTarget(data.direction);
-		this.game.add(cloud);
-
-		if (this.drain(this.fireCost)) {
-			this.socket.emit('fire', {
-				energy: this.energy,
-				fireCost: this.fireCost,
-				damage: cloud.power()
-			});
-		}*/
 
 		let pos = this.pos();
-		let x = pos.x + Math.sin(data.direction) * 50;
-		let y = pos.y + Math.cos(data.direction) * 50;
+		let fireballPos = pos.copy().move(data.direction, 50);
 
 		let fireball = new Skill(this, {
-			startX: x,
-			startY: y,
+			startX: fireballPos.x,
+			startY: fireballPos.y,
 			queue: [
 				{
 					class: 'Collector',
 					options: {
 						identifier: 'fire1',
-						startX: x,
-						startY: y,
+						startX: fireballPos.x,
+						startY: fireballPos.y,
 						duration: 10
 					}
 				},
@@ -178,12 +151,14 @@ class Player extends Element {
 			this.move();
 		}
 
-		let pos = this.pos();
-		if (Math.abs(pos.x - this.target.x) < 1 && Math.abs(pos.y - this.target.y) < 1) {
+		let compare = this.pos().sub(this.target);
+		if (Math.abs(compare.x) < 1 && Math.abs(compare.y) < 1) {
 			this.stopMovement();
 		}
 
 		if (this.energy < this.maxEnergy) {
+			let pos = this.pos();
+
 			let drained = this.game.field.consume(pos.x, pos.y, Math.sqrt(this.power), this.power);
 			this.energy = Math.min(this.maxEnergy, this.energy + drained);
 		}

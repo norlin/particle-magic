@@ -1,5 +1,6 @@
 import Log from 'common/log';
 import Utils from 'common/utils';
+import Vector from 'common/vector';
 import Entity from 'common/entity.js';
 import Keys from './keys';
 import Canvas from './canvas';
@@ -103,15 +104,10 @@ class GameBasics extends Entity {
 	}
 
 	onMove(mouse) {
-		let x = this.options.screenWidth / 2;
-		let y = this.options.screenHeight / 2;
+		let center = new Vector(this.options.screenWidth / 2, this.options.screenHeight / 2);
+		let point = new Vector(mouse.clientX, mouse.clientY);
 
-		let point = {
-			x: mouse.clientX,
-			y: mouse.clientY
-		};
-
-		this.direction = Utils.getDirection({x, y}, point);
+		this.direction = center.directionTo(point);
 	}
 
 	onClick(mouse) {
@@ -240,10 +236,7 @@ class GameBasics extends Entity {
 			y -= this.config.height;
 		}
 
-		return {
-			x: x - view.x + this.centerX,
-			y: y - view.y + this.centerY
-		};
+		return new Vector(x - view.x + this.centerX, y - view.y + this.centerY);
 	}
 
 	iterate(method, objects) {

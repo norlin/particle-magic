@@ -1,4 +1,5 @@
 import Log from 'common/log';
+import Vector from 'common/vector';
 import Entity from 'common/entity.js';
 
 let log = new Log('Canvas');
@@ -90,22 +91,25 @@ class Canvas extends Entity {
 	}
 
 	drawLine(options) {
-		let x = options.x;
-		let y = options.y;
-		let vector = options.vector;
-		let distance = options.distance || 100;
+		let from = options.from;
+		let to = options.to;
+
+		if (!to) {
+			let angle = options.angle;
+			let distance = options.distance || 100;
+
+			to = from.copy().move(angle, distance);
+		}
+
 		let color = options.color;
 		let width = options.width;
 		let solid = options.solid;
 
 		let ctx = this.ctx;
 
-		let x2 = typeof(vector) == 'number' ? x + Math.sin(vector) * distance : options.x2;
-		let y2 = typeof(vector) == 'number' ? y + Math.cos(vector) * distance : options.y2;
-
 		ctx.beginPath();
-		ctx.moveTo(x, y);
-		ctx.lineTo(x2, y2);
+		ctx.moveTo(from.x, from.y);
+		ctx.lineTo(to.x, to.y);
 		if (!solid) {
 			ctx.setLineDash([5]);
 		}
