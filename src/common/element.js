@@ -45,7 +45,7 @@ class Element extends Entity {
 		let deltaDist = dist / (50 + radius);
 
 		if (dist < (50 + this.radius)) {
-			delta.mult(deltaDist);
+			delta.multBy(deltaDist);
 		}
 
 		this._position.add(delta);

@@ -238,10 +238,7 @@ class Game extends Entity {
 					objects[object.id].hits = object.hits;
 				}
 			} else if (object.type == 'player' && currentPos) {
-				let directionX = pos.x - currentPos.x;
-				let directionY = pos.y - currentPos.y;
-
-				let direction = Math.atan2(directionX, directionY);
+				let direction = currentPos.directionTo(pos);
 
 				objects[object.id] = {
 					id: object.id,

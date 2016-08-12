@@ -35,7 +35,7 @@ class Aim extends ClientElement {
 		//let screenPos = this.game.toScreenCoords(x, y);
 		//this.game.canvas.strokeCircle(screenPos.x, screenPos.y, this.radius, this.color, 1);
 
-		let screenPos = this.game.toScreenCoords(pos.x, pos.y);
+		let screenPos = this.game.toScreenCoords(pos);
 		this.game.canvas.drawLine({
 			from: screenPos,
 			angle: direction,

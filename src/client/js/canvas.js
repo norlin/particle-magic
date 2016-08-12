@@ -8,18 +8,20 @@ class Canvas extends Entity {
 	constructor(game, options) {
 		super(game, options);
 
+		this.size = options.size;
+
 		this.canvas = this.options.canvas;
-		this.updateSize(this.options.width, this.options.height);
+		this.updateSize(this.size);
 
 		this.init();
 	}
 
-	updateSize(w, h) {
-		this.canvas.width = this.width = this.options.width = w;
-		this.canvas.height = this.height = this.options.height = h;
+	updateSize(size) {
+		this.size = size;
+		this.center = this.size.copy().divBy(2);
 
-		this.centerX = this.width/2;
-		this.centerY = this.height/2;
+		this.canvas.width = this.size.x;
+		this.canvas.height = this.size.y;
 	}
 
 	init() {
@@ -33,7 +35,7 @@ class Canvas extends Entity {
 	}
 
 	clear() {
-		this.ctx.clearRect(0, 0, this.width, this.height);
+		this.ctx.clearRect(0, 0, this.size.x, this.size.y);
 	}
 
 	add(object) {

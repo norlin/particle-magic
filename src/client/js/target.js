@@ -26,9 +26,7 @@ class Target extends ClientElement {
 	}
 
 	draw(canvas) {
-		let pos = this.pos();
-
-		let screenPos = this.game.toScreenCoords(pos.x, pos.y);
+		let screenPos = this.game.toScreenCoords(this.pos());
 
 		this.game.canvas.strokeCircle(screenPos.x, screenPos.y, this.radius, this.color, 1);
 	}

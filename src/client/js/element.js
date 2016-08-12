@@ -15,8 +15,7 @@ class ClientElement extends Element {
 	}
 
 	draw(canvas) {
-		let gamePos = this.pos();
-		let screenPos = this.game.toScreenCoords(gamePos.x, gamePos.y);
+		let screenPos = this.game.toScreenCoords(this.pos());
 
 		canvas.drawCircle(screenPos.x, screenPos.y, this.radius, this.color);
 

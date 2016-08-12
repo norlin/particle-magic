@@ -18,14 +18,14 @@ class Vector {
 		return this;
 	}
 
-	mult(multiplier) {
+	multBy(multiplier) {
 		this.x *= multiplier;
 		this.y *= multiplier;
 
 		return this;
 	}
 
-	div(multiplier) {
+	divBy(multiplier) {
 		this.x /= multiplier;
 		this.y /= multiplier;
 

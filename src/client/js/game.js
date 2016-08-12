@@ -75,8 +75,7 @@ class Game extends GameBasics {
 
 			this.fillPlayerData(this.player, data);
 
-			this.viewpoint.x = this.player._position.x;
-			this.viewpoint.y = this.player._position.y;
+			this.viewpoint = this.player.pos();
 
 			let visible = data.visible;
 
@@ -131,8 +130,7 @@ class Game extends GameBasics {
 		this.player = player;
 		this.add(player);
 
-		this.viewpoint.x = this.player._position.x;
-		this.viewpoint.y = this.player._position.y;
+		this.viewpoint = this.player.pos();
 	}
 
 	addMass(options) {
@@ -158,8 +156,8 @@ class Game extends GameBasics {
 		}
 
 		this.socket.emit('start', {
-			screenWidth: this.options.screenWidth,
-			screenHeight: this.options.screenHeight
+			screenWidth: this.screen.x,
+			screenHeight: this.screen.y
 		});
 	}
 
@@ -171,12 +169,12 @@ class Game extends GameBasics {
 			let left = Math.floor(pos.x);
 			let top = Math.floor(pos.y);
 
-			this.canvas.drawText(10, this.options.screenHeight - 40, `Position: ${left} x ${top}`);
+			this.canvas.drawText(10, this.screen.y - 40, `Position: ${left} x ${top}`);
 			this.canvas.drawText(10, 20, `Health: ${Math.ceil(this.player.health)}/${this.player.maxHealth}`);
 			this.canvas.drawText(10, 40, `Energy: ${Math.floor(this.player.energy)}/${this.player.maxEnergy}`);
 
 			if (this.debug) {
-				let screenPos = this.toScreenCoords(pos.x, pos.y);
+				let screenPos = this.toScreenCoords(pos);
 				this.canvas.drawLine({
 					from: screenPos,
 					angle: this.direction,
@@ -185,65 +183,57 @@ class Game extends GameBasics {
 					solid: true
 				});
 
-				this.canvas.drawText(10, this.options.screenHeight - 20, `Direction: ${this.direction * 180 / Math.PI}`);
+				this.canvas.drawText(10, this.screen.y - 20, `Direction: ${this.direction * 180 / Math.PI}`);
 			}
 		} else {
-			this.canvas.drawText(this.options.screenWidth / 2, this.options.screenHeight / 2, 'No player');
+			this.canvas.drawText(this.center.x, this.center.y, 'No player');
 		}
-
-		let center = new Vector(this.centerX, this.centerY);
 
 		let rad45 = Math.PI/4;
 		let rad90 = Math.PI/2;
 		let rad135 = Math.PI - rad45;
 
 		let targetWidth = 50;
+		let targetOffset = 5;
 
 		this.targetDirections.forEach((target)=>{
 			let d = target.direction;
 			let sector = d > -rad45 && d < rad45 ? 1 : (d >= rad45 && d < rad135 ? 2 : (d >= rad135 || d < -rad135 ? 3 : 4));
 
-			let angle;
 			let side;
-			let targetW;
-			let targetH;
+			let length;
+
+			let targetSize;
+
 			switch (sector) {
-			case 1:
-				angle = target.direction;
-				side = this.centerY;
-				targetW = targetWidth;
-				targetH = 0;
+			case 1: // right
+				side = this.center.x - targetOffset;
+				length = (side / Math.cos(d));
+				targetSize = new Vector(0, targetWidth);
 				break;
-			case 2:
-				angle = target.direction - rad90;
-				side = this.centerX;
-				targetW = 0;
-				targetH = targetWidth;
+			case 2: // bottom
+				side = this.center.y - targetOffset;
+				length = (side / Math.sin(d));
+				targetSize = new Vector(targetWidth, 0);
 				break;
-			case 3:
-				if (target.direction > 0) {
-					angle = target.direction - Math.PI;
-				} else {
-					angle = target.direction + Math.PI;
-				}
-				side = this.centerY;
-				targetW = targetWidth;
-				targetH = 0;
+			case 3: // left
+				side = this.center.x - targetOffset;
+				length = (-side / Math.cos(d));
+				targetSize = new Vector(0, targetWidth);
 				break;
-			case 4:
-				angle = target.direction + rad90;
-				side = this.centerX;
-				targetW = 0;
-				targetH = targetWidth;
+			case 4: // top
+				side = this.center.y - targetOffset;
+				length = (-side / Math.sin(d));
+				targetSize = new Vector(targetWidth, 0);
 				break;
 			}
-			let length = side / Math.cos(angle);
 
-			let point = center.copy().move(target.direction, length);
+			let point = this.center.copy().move(d, length);
+			targetSize.divBy(2);
 
 			this.canvas.drawLine({
-				from: new Vector(point.x-targetW/2, point.y-targetH/2),
-				to: new Vector(point.x+targetW/2, point.y+targetH/2),
+				from: point.copy().sub(targetSize),
+				to: point.copy().add(targetSize),
 				solid: true,
 				color: target.color,
 				width: 5
@@ -258,7 +248,8 @@ class Game extends GameBasics {
 
 		if (this.debug) {
 			this.sectors.forEach((sector)=>{
-				let pos = this.toScreenCoords(sector.x, sector.y);
+				let sectorPoint = new Vector(sector.x, sector.y);
+				let pos = this.toScreenCoords(sectorPoint);
 				this.canvas.drawText(pos.x+50, pos.y+50, Math.floor(sector.value));
 			});
 		}

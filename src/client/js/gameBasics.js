@@ -9,9 +9,6 @@ let log = new Log('basics');
 
 class GameBasics extends Entity {
 	constructor(options) {
-		options.screenWidth = options.screenWidth || document.body.offsetWidth;
-		options.screenHeight = options.screenHeight || document.body.offsetHeight;
-
 		super(null, options);
 
 		this.objects = {};
@@ -20,10 +17,7 @@ class GameBasics extends Entity {
 
 		this.debug = false;
 
-		this.viewpoint = {
-			x: 0,
-			y: 0
-		};
+		this.viewpoint = new Vector();
 
 		this.initCanvas();
 	}
@@ -55,10 +49,11 @@ class GameBasics extends Entity {
 			throw 'No canvas found!';
 		}
 
+		this.updateScreen();
+
 		this.canvas = new Canvas(this, {
 			canvas: el,
-			width: this.options.screenWidth,
-			height: this.options.screenHeight,
+			size: this.screen.copy(),
 			background: '#fff'
 		});
 
@@ -68,19 +63,17 @@ class GameBasics extends Entity {
 		document.body.addEventListener('mousemove', (e)=>this.onMove(e), true);
 
 		window.addEventListener('resize', ()=>this.updateScreen());
-		this.updateScreen();
 
 		this.direction = 0;
 	}
 
 	updateScreen() {
-		this.options.screenWidth = document.body.offsetWidth;
-		this.options.screenHeight = document.body.offsetHeight;
+		this.screen = new Vector(document.body.offsetWidth, document.body.offsetHeight);
+		this.center = this.screen.copy().divBy(2);
 
-		this.centerX = this.options.screenWidth / 2;
-		this.centerY = this.options.screenHeight / 2;
-
-		this.canvas.updateSize(this.options.screenWidth, this.options.screenHeight);
+		if (this.canvas) {
+			this.canvas.updateSize(this.screen);
+		}
 	}
 
 	onKeyDown(event) {
@@ -103,18 +96,15 @@ class GameBasics extends Entity {
 		}
 	}
 
-	onMove(mouse) {
-		let center = new Vector(this.options.screenWidth / 2, this.options.screenHeight / 2);
-		let point = new Vector(mouse.clientX, mouse.clientY);
+	onMove(event) {
+		let mouse = new Vector(event.clientX, event.clientY);
 
-		this.direction = center.directionTo(point);
+		this.direction = this.center.directionTo(mouse);
 	}
 
-	onClick(mouse) {
-		let point = {
-			x: mouse.clientX - this.options.screenWidth / 2,
-			y: mouse.clientY - this.options.screenHeight / 2
-		};
+	onClick(event) {
+		let mouse = new Vector(event.clientX, event.clientY);
+		let point = mouse.sub(this.center);
 
 		this.emit(`click.global`, point);
 
@@ -122,12 +112,8 @@ class GameBasics extends Entity {
 			this.emit(`click`, point);
 		}
 
-		let pos = this.viewpoint;
-
-		let gamePoint = {
-			x: pos.x + point.x,
-			y: pos.y + point.y
-		};
+		let pos = this.viewpoint.copy();
+		let gamePoint = pos.add(point);
 
 		this.emit(`gameClick`, gamePoint);
 	}
@@ -151,15 +137,8 @@ class GameBasics extends Entity {
 
 	drawGrid() {
 		let size = this.options.gridSize || 32;
-		let screenWidth = this.options.screenWidth;
-		let screenHeight = this.options.screenHeight;
-
-		let horizontalStep = size;
-		let verticalStep = size;
-
-		let viewpoint = this.viewpoint;
-
-		let init = {x: -0 -viewpoint.x, y: -0 -viewpoint.y};
+		let step = new Vector(size, size);
+		let init = new Vector(-0 -this.viewpoint.x, -0 -this.viewpoint.y);
 
 		let ctx = this.canvas.ctx;
 
@@ -167,14 +146,14 @@ class GameBasics extends Entity {
 		ctx.lineWidth = 1;
 		ctx.strokeStyle = this.config.gridColor;
 
-		for (let x = init.x; x < screenWidth; x += horizontalStep) {
+		for (let x = init.x; x < this.screen.x; x += step.x) {
 			ctx.moveTo(x, 0);
-			ctx.lineTo(x, screenHeight);
+			ctx.lineTo(x, this.screen.y);
 		}
 
-		for (let y = init.y; y < screenHeight; y += verticalStep) {
+		for (let y = init.y; y < this.screen.y; y += step.y) {
 			ctx.moveTo(0, y);
-			ctx.lineTo(screenWidth, y);
+			ctx.lineTo(this.screen.x, y);
 		}
 
 		ctx.stroke();
@@ -192,51 +171,54 @@ class GameBasics extends Entity {
 		ctx.lineWidth = 1;
 		ctx.strokeStyle = this.config.borderColor;
 
+		let leftTop = this.center.copy().sub(viewpoint);
+		//let rightBottom = this.center.copy().add(viewpoint);
+
 		// Left
-		if (viewpoint.x <= this.centerX) {
-			ctx.moveTo(this.centerX - viewpoint.x, this.centerY - viewpoint.y);
-			ctx.lineTo(this.centerX - viewpoint.x, config.height + this.centerY - viewpoint.y);
+		if (viewpoint.x <= this.center.x) {
+			ctx.moveTo(leftTop.x, leftTop.y);
+			ctx.lineTo(leftTop.x, config.height + leftTop.y);
 		}
 
 		// Top
-		if (viewpoint.y <= this.centerY) {
-			ctx.moveTo(this.centerX - viewpoint.x, this.centerY - viewpoint.y);
-			ctx.lineTo(config.width + this.centerX - viewpoint.x, this.centerY - viewpoint.y);
+		if (viewpoint.y <= this.center.y) {
+			ctx.moveTo(leftTop.x, leftTop.y);
+			ctx.lineTo(config.width + leftTop.x, leftTop.y);
 		}
 
 		// Right
-		if (config.width - viewpoint.x <= this.centerX) {
-			ctx.moveTo(config.width + this.centerX - viewpoint.x, this.centerY - viewpoint.y);
-			ctx.lineTo(config.width + this.centerX - viewpoint.x, config.height + this.centerY - viewpoint.y);
+		if (config.width - viewpoint.x <= this.center.x) {
+			ctx.moveTo(config.width + leftTop.x, leftTop.y);
+			ctx.lineTo(config.width + leftTop.x, config.height + leftTop.y);
 		}
 
 		// Bottom
-		if (config.height - viewpoint.y <= this.centerY) {
-			ctx.moveTo(config.width + this.centerX - viewpoint.x, config.height + this.centerY - viewpoint.y);
-			ctx.lineTo(this.centerX - viewpoint.x, config.height + this.centerY - viewpoint.y);
+		if (config.height - viewpoint.y <= this.center.y) {
+			ctx.moveTo(config.width + leftTop.x, config.height + leftTop.y);
+			ctx.lineTo(leftTop.x, config.height + leftTop.y);
 		}
 
 		ctx.stroke();
 	}
 
-	toScreenCoords(x, y) {
+	toScreenCoords(vector) {
+		let point = vector.copy();
 		let view = this.viewpoint;
+		let corr = view.copy().sub(this.center);
 
-		let corrX = view.x - this.centerX;
-		if (x < corrX) {
-			x += this.config.width;
-		} else if (x > this.options.screenWidth + corrX) {
-			x -= this.config.width;
+		if (point.x < corr.x) {
+			point.x += this.config.width;
+		} else if (point.x > this.screen.x + corr.x) {
+			point.x -= this.config.width;
 		}
 
-		let corrY = view.y - this.centerY;
-		if (y < corrY) {
-			y += this.config.height;
-		} else if (y > this.options.screenHeight + corrY) {
-			y -= this.config.height;
+		if (point.y < corr.y) {
+			point.y += this.config.height;
+		} else if (point.y > this.screen.y + corr.y) {
+			point.y -= this.config.height;
 		}
 
-		return new Vector(x - view.x + this.centerX, y - view.y + this.centerY);
+		return point.sub(corr);
 	}
 
 	iterate(method, objects) {
