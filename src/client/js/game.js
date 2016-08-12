@@ -53,8 +53,7 @@ class Game extends GameBasics {
 				id: data.id,
 				name: 'test',
 				color: data.color,
-				startX: data.x,
-				startY: data.y,
+				start: new Vector(data.x, data.y),
 				radius: data.radius
 			};
 
@@ -68,10 +67,8 @@ class Game extends GameBasics {
 		});
 
 		this.socket.on('update', (data)=>{
-			this.player.target.x = data.targetX;
-			this.player.target.y = data.targetY;
-			this.player._position.x = data.x;
-			this.player._position.y = data.y;
+			this.player.target = new Vector(data.targetX, data.targetY);
+			this.player._position = new Vector(data.x, data.y);
 
 			this.fillPlayerData(this.player, data);
 
@@ -104,8 +101,7 @@ class Game extends GameBasics {
 				}
 
 				if (existing) {
-					existing._position.x = newObject.x;
-					existing._position.y = newObject.y;
+					existing._position = new Vector(newObject.x, newObject.y);
 					existing.radius = newObject.radius;
 					existing.color = newObject.color;
 					existing.hits = newObject.hits;
@@ -114,8 +110,7 @@ class Game extends GameBasics {
 
 				this.addMass({
 					id: id,
-					startX: newObject.x,
-					startY: newObject.y,
+					start: new Vector(newObject.x, newObject.y),
 					radius: newObject.radius,
 					color: newObject.color,
 					hits: newObject.hits
@@ -169,9 +164,9 @@ class Game extends GameBasics {
 			let left = Math.floor(pos.x);
 			let top = Math.floor(pos.y);
 
-			this.canvas.drawText(10, this.screen.y - 40, `Position: ${left} x ${top}`);
-			this.canvas.drawText(10, 20, `Health: ${Math.ceil(this.player.health)}/${this.player.maxHealth}`);
-			this.canvas.drawText(10, 40, `Energy: ${Math.floor(this.player.energy)}/${this.player.maxEnergy}`);
+			this.canvas.drawText(new Vector(10, this.screen.y - 40), `Position: ${left} x ${top}`);
+			this.canvas.drawText(new Vector(10, 20), `Health: ${Math.ceil(this.player.health)}/${this.player.maxHealth}`);
+			this.canvas.drawText(new Vector(10, 40), `Energy: ${Math.floor(this.player.energy)}/${this.player.maxEnergy}`);
 
 			if (this.debug) {
 				let screenPos = this.toScreenCoords(pos);
@@ -183,10 +178,10 @@ class Game extends GameBasics {
 					solid: true
 				});
 
-				this.canvas.drawText(10, this.screen.y - 20, `Direction: ${this.direction * 180 / Math.PI}`);
+				this.canvas.drawText(new Vector(10, this.screen.y - 20), `Direction: ${this.direction * 180 / Math.PI}`);
 			}
 		} else {
-			this.canvas.drawText(this.center.x, this.center.y, 'No player');
+			this.canvas.drawText(this.center, 'No player');
 		}
 
 		let rad45 = Math.PI/4;
@@ -250,7 +245,8 @@ class Game extends GameBasics {
 			this.sectors.forEach((sector)=>{
 				let sectorPoint = new Vector(sector.x, sector.y);
 				let pos = this.toScreenCoords(sectorPoint);
-				this.canvas.drawText(pos.x+50, pos.y+50, Math.floor(sector.value));
+				this.canvas.drawText(pos.add(50), Math.floor(sector.value));
+				this.canvas.drawText(pos.add(10), sector.heat, '#f00');
 			});
 		}
 	}

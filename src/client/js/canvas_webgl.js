@@ -108,6 +108,7 @@ class Canvas extends Entity {
 	}
 
 	drawCircle(x, y, radius, color) {
+		// TODO: vectorize arguments!
 		let ctx = this.ctx;
 
 		ctx.beginPath();
@@ -117,6 +118,7 @@ class Canvas extends Entity {
 	}
 
 	drawRect(x, y, w, h, color) {
+		// TODO: vectorize arguments!
 		let gl = this.ctx;
 		let program = this.program;
 
@@ -141,6 +143,7 @@ class Canvas extends Entity {
 	}
 
 	drawText(x, y, text, color) {
+		// TODO: vectorize arguments!
 		let ctx = this.ctx;
 
 		ctx.font = '12px Arial';

@@ -1,4 +1,5 @@
 import Log from 'common/log';
+import Vector from 'common/vector';
 import GameBasics from './gameBasics';
 import Panel from './panel';
 
@@ -16,10 +17,7 @@ class Constructor extends GameBasics {
 			gridColor: '#ddd'
 		});
 
-		this.viewpoint = {
-			x: this.config.width / 2,
-			y: this.config.height / 2
-		};
+		this.viewpoint = new Vector(this.config.width / 2, this.config.height / 2);
 
 		this.makeUI();
 	}

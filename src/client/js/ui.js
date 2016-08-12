@@ -1,16 +1,18 @@
 import Log from 'common/log';
+import Vector from 'common/vector';
 import Entity from 'common/entity';
 
 class UIElement extends Entity {
 	constructor(game, options) {
 		super(game, options);
 
-		this.pos = {
-			x: typeof(this.options.x) == 'number' ? this.options.x : this.game.centerX,
-			y: typeof(this.options.y) == 'number' ? this.options.y : this.game.centerY
-		};
+		this._position = this.options.pos || this.game.center.copy();
 
 		this.game.add(this, 'ui');
+	}
+
+	pos() {
+		return this._position.copy();
 	}
 
 	draw(canvas) {}

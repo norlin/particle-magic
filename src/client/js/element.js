@@ -17,12 +17,11 @@ class ClientElement extends Element {
 	draw(canvas) {
 		let screenPos = this.game.toScreenCoords(this.pos());
 
-		canvas.drawCircle(screenPos.x, screenPos.y, this.radius, this.color);
+		canvas.drawCircle(screenPos, this.radius, this.color);
 
 		if (this.hits) {
 			new Notify(this.game, {
-				x: screenPos.x,
-				y: screenPos.y,
+				pos: screenPos,
 				text: `-${Math.round(this.hits)}`,
 				timeout: 1000
 			});

@@ -19,7 +19,7 @@ class Element extends Entity {
 
 		this._speed = this.options.speed || 6.25;
 
-		this._position = new Vector(this.options.startX, this.options.startY);
+		this._position = this.options.start.copy();
 	}
 
 	pos() {
@@ -32,7 +32,7 @@ class Element extends Entity {
 		}
 
 		let pos = this.pos();
-		let target = new Vector(this.target.x - pos.x, this.target.y - pos.y);
+		let target = this.target.copy().sub(pos);
 
 		if (!target.x && !target.y) {
 			return;

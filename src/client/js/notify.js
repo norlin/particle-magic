@@ -13,7 +13,7 @@ class Notify extends UIElement {
 	}
 
 	draw(canvas) {
-		canvas.drawText(this.pos.x, this.pos.y, this.options.text);
+		canvas.drawText(this.pos(), this.options.text);
 	}
 
 	hide() {

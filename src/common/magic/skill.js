@@ -19,10 +19,7 @@ class Skill extends Element {
 	constructor(caster, options, parent) {
 		let pos = caster.pos();
 
-		super(caster.game, Object.assign({
-			startX: pos.x,
-			startY: pos.y
-		}, options));
+		super(caster.game, Object.assign({start: pos}, options));
 
 		this.invisible = true;
 

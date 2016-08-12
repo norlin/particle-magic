@@ -52,44 +52,51 @@ class Canvas extends Entity {
 		this.canvas.style.background = this.bg;
 	}
 
-	drawCircle(x, y, radius, color) {
+	drawCircle(pos, radius, color) {
 		let ctx = this.ctx;
 
 		ctx.beginPath();
-		ctx.arc(x, y, radius, 0, this.pi2, false);
+		ctx.arc(pos.x, pos.y, radius, 0, this.pi2, false);
 		ctx.fillStyle = color;
 		ctx.fill();
 	}
 
-	strokeCircle(x, y, radius, color, width) {
+	strokeCircle(pos, radius, color, width) {
 		let ctx = this.ctx;
 
 		ctx.beginPath();
-		ctx.arc(x, y, radius, 0, this.pi2, false);
+		ctx.arc(pos.x, pos.y, radius, 0, this.pi2, false);
 		ctx.lineWidth = width || 3;
 		ctx.strokeStyle = color;
 		ctx.stroke();
 	}
 
-	drawRect(x, y, w, h, color, stroke, strokeColor) {
+	drawRect(pos, size, color, stroke, strokeColor) {
 		let ctx = this.ctx;
 
 		ctx.fillStyle = color;
-		ctx.fillRect(x, y, w, h);
+		ctx.fillRect(pos.x, pos.y, size.x, size.y);
 
 		if (stroke) {
 			ctx.lineWidth = stroke;
 			ctx.strokeStyle = strokeColor || '#000';
-			ctx.strokeRect(x+stroke, y+stroke, w-(stroke*2), h-(stroke*2));
+
+			pos = pos.copy();
+			pos.add(stroke);
+
+			size = size.copy();
+			size.sub(stroke*2);
+
+			ctx.strokeRect(pos.x, pos.y, size.x, size.y);
 		}
 	}
 
-	drawText(x, y, text, color) {
+	drawText(pos, text, color) {
 		let ctx = this.ctx;
 
 		ctx.font = '12px Arial';
 		ctx.fillStyle = color || '#000';
-		ctx.fillText(text, x, y);
+		ctx.fillText(text, pos.x, pos.y);
 	}
 
 	drawLine(options) {

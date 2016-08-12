@@ -102,25 +102,24 @@ class ClientPlayer extends Element {
 	}
 
 	setKeyboardTarget() {
-		let x = this._position.x;
-		let y = this._position.y;
+		let pos = this.pos();
 
 		if (this._keyUP) {
-			y -=  Number.MAX_VALUE;
+			pos.y -=  Number.MAX_VALUE;
 		}
 		if (this._keyDOWN) {
-			y +=  Number.MAX_VALUE;
+			pos.y +=  Number.MAX_VALUE;
 		}
 		if (this._keyLEFT) {
-			x -=  Number.MAX_VALUE;
+			pos.x -=  Number.MAX_VALUE;
 		}
 		if (this._keyRIGHT) {
-			x +=  Number.MAX_VALUE;
+			pos.x +=  Number.MAX_VALUE;
 		}
 
 		this.socket.emit('setTarget', {
-			x: x,
-			y: y
+			x: pos.x,
+			y: pos.y
 		});
 	}
 
@@ -145,23 +144,21 @@ class ClientPlayer extends Element {
 	}
 
 	updateTarget() {
-		if (this.target.mark) {
-			this.target.mark.reset();
-			this.target.mark._position.x = this.target.x;
-			this.target.mark._position.y = this.target.y;
+		if (this.mark) {
+			this.mark.reset();
+			this.mark._position = this.target.copy();
 		} else {
-			this.target.mark = new Target(this, {
-				startX: this.target.x,
-				startY: this.target.y,
+			this.mark = new Target(this, {
+				start: this.target.copy(),
 				color: this.color
 			});
 		}
 	}
 
 	stopMovement() {
-		if (this.target.mark) {
+		if (this.mark) {
 			log.info('stopMovement');
-			this.target.mark = undefined;
+			this.mark = undefined;
 		}
 	}
 
@@ -170,14 +167,15 @@ class ClientPlayer extends Element {
 
 		let radius = this.radius;
 		let pos = this.pos();
-		if (Math.abs(pos.x - this.target.x) < radius && Math.abs(pos.y - this.target.y) < radius) {
+		pos.sub(this.target);
+
+		if (Math.abs(pos.x) < radius && Math.abs(pos.y) < radius) {
 			this.stopMovement();
 		} else {
-			if (this.target.mark) {
-				this.target.mark._position.x = this.target.x;
-				this.target.mark._position.y = this.target.y;
+			if (this.mark) {
+				this.mark._position = this.target.copy();
 
-				this.target.mark.tick();
+				this.mark.tick();
 			} else {
 				this.updateTarget();
 			}
@@ -195,8 +193,8 @@ class ClientPlayer extends Element {
 			this.aim.draw(canvas);
 		}
 
-		if (this.target.mark) {
-			this.target.mark.draw(canvas);
+		if (this.mark) {
+			this.mark.draw(canvas);
 		}
 	}
 }

@@ -5,15 +5,25 @@ class Vector {
 	}
 
 	add(vector) {
-		this.x += vector.x;
-		this.y += vector.y;
+		if (typeof(vector) == 'number') {
+			this.x += vector;
+			this.y += vector;
+		} else {
+			this.x += vector.x;
+			this.y += vector.y;
+		}
 
 		return this;
 	}
 
 	sub(vector) {
-		this.x -= vector.x;
-		this.y -= vector.y;
+		if (typeof(vector) == 'number') {
+			this.x -= vector;
+			this.y -= vector;
+		} else {
+			this.x -= vector.x;
+			this.y -= vector.y;
+		}
 
 		return this;
 	}

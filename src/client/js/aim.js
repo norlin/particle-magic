@@ -3,7 +3,8 @@ import ClientElement from './element';
 
 class Aim extends ClientElement {
 	constructor(player, options) {
-		super(player.game, options);
+		let pos = player.pos();
+		super(player.game, Object.assign({start: pos}, options));
 
 		this.color = this.options.color;
 		this.player = player;
@@ -27,13 +28,6 @@ class Aim extends ClientElement {
 	draw(canvas) {
 		let pos = this.player.pos();
 		let direction = this.game.direction;
-		//let distance = this.player.radius + 50;
-
-		//let x = pos.x + Math.cos(direction) * distance;
-		//let y = pos.y + Math.sin(direction) * distance;
-
-		//let screenPos = this.game.toScreenCoords(x, y);
-		//this.game.canvas.strokeCircle(screenPos.x, screenPos.y, this.radius, this.color, 1);
 
 		let screenPos = this.game.toScreenCoords(pos);
 		this.game.canvas.drawLine({

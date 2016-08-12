@@ -1,5 +1,6 @@
 import Log from 'common/log';
 import Utils from 'common/utils';
+import Vector from 'common/vector';
 import Entity from 'common/entity';
 import Player from './player';
 import Field from './field';
@@ -123,14 +124,12 @@ class Game extends Entity {
 			return;
 		}
 
-		let basicPower = 0.1;
+		let basicPower = 50;
 
 		let player = new Player(this, socket, {
 			id: socket.id,
-			screenWidth: data.screenWidth,
-			screenHeight: data.screenHeight,
-			startX: Utils.randomInRange(0, this.config.width),
-			startY: Utils.randomInRange(0, this.config.height),
+			screen: new Vector(data.screenWidth, data.screenHeight),
+			start: new Vector(Utils.randomInRange(0, this.config.width), Utils.randomInRange(0, this.config.height)),
 			radius: 20,
 
 			fireCost: 50,
@@ -138,7 +137,7 @@ class Game extends Entity {
 			fireDistance: 500,
 			maxHealth: 100,
 			health: 100,
-			maxEnergy: 500,
+			maxEnergy: Number.MAX_VALUE,
 			energy: 0,
 			basicPower: basicPower,
 			maxPower: basicPower * 100,

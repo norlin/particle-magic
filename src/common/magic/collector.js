@@ -45,8 +45,7 @@ class Collector extends Skill {
 				particle: 'fire',
 				count: 0,
 				radius: 1,
-				startX: this._position.x,
-				startY: this._position.y
+				start: this.pos()
 			});
 
 			let objectId = this.options.identifier||this.id;
@@ -78,8 +77,7 @@ class Collector extends Skill {
 			return;
 		}
 
-		let pos = this.pos();
-		let drained = this.game.field.consume(pos.x, pos.y, this.radius, this.power);
+		let drained = this.game.field.consume(this.pos(), this.radius, this.power);
 		this.cloud.feed(drained);
 
 		if (this.duration > 0) {

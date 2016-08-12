@@ -1,6 +1,6 @@
 import Log from 'common/log';
-import Vector from 'common/vector.js';
-import Element from 'common/element.js';
+import Vector from 'common/vector';
+import Element from 'common/element';
 import {Skill} from 'common/magic/skill';
 
 let log = new Log('Player');
@@ -12,10 +12,7 @@ class Player extends Element {
 		this.type = 'player';
 
 		this.socket = socket;
-		this.screen = {
-			width: this.options.screenWidth,
-			height: this.options.screenHeight
-		};
+		this.screen = this.options.screen;
 
 		this.listen();
 
@@ -113,15 +110,13 @@ class Player extends Element {
 		let fireballPos = pos.copy().move(data.direction, 50);
 
 		let fireball = new Skill(this, {
-			startX: fireballPos.x,
-			startY: fireballPos.y,
+			start: fireballPos,
 			queue: [
 				{
 					class: 'Collector',
 					options: {
 						identifier: 'fire1',
-						startX: fireballPos.x,
-						startY: fireballPos.y,
+						start: fireballPos,
 						duration: 10
 					}
 				},
@@ -130,8 +125,7 @@ class Player extends Element {
 					//identifier: 'fire1',
 					options: {
 						target: 'fire1',
-						startX: pos.x,
-						startY: pos.y
+						start: pos
 					}
 				}
 			]
@@ -157,9 +151,7 @@ class Player extends Element {
 		}
 
 		if (this.energy < this.maxEnergy) {
-			let pos = this.pos();
-
-			let drained = this.game.field.consume(pos.x, pos.y, Math.sqrt(this.power), this.power);
+			let drained = this.game.field.consume(this.pos(), Math.sqrt(this.power), this.power);
 			this.energy = Math.min(this.maxEnergy, this.energy + drained);
 		}
 	}
@@ -198,16 +190,15 @@ class Player extends Element {
 	viewport() {
 		let pos = this.pos();
 
-		let halfWidth = this.screen.width / 2;
-		let halfHeight = this.screen.height / 2;
+		let half = this.screen.copy().divBy(2);
 
 		let offset = 50;
 
 		return {
-			left: pos.x - halfWidth - offset,
-			right: pos.x + halfWidth + offset,
-			top: pos.y - halfHeight - offset,
-			bottom: pos.y + halfHeight + offset
+			left: pos.x - half.x - offset,
+			right: pos.x + half.x + offset,
+			top: pos.y - half.y - offset,
+			bottom: pos.y + half.y + offset
 		};
 	}
 }

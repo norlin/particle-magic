@@ -1,6 +1,8 @@
 import Log from 'common/log';
 import ClientElement from './element';
 
+let log = new Log('Target');
+
 class Target extends ClientElement {
 	constructor(player, options) {
 		super(player.game, options);
@@ -28,7 +30,7 @@ class Target extends ClientElement {
 	draw(canvas) {
 		let screenPos = this.game.toScreenCoords(this.pos());
 
-		this.game.canvas.strokeCircle(screenPos.x, screenPos.y, this.radius, this.color, 1);
+		this.game.canvas.strokeCircle(screenPos, this.radius, this.color, 1);
 	}
 }
 

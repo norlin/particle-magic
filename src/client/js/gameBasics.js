@@ -138,7 +138,7 @@ class GameBasics extends Entity {
 	drawGrid() {
 		let size = this.options.gridSize || 32;
 		let step = new Vector(size, size);
-		let init = new Vector(-0 -this.viewpoint.x, -0 -this.viewpoint.y);
+		let init = new Vector(-this.viewpoint.x, -this.viewpoint.y);
 
 		let ctx = this.canvas.ctx;
 
@@ -172,7 +172,6 @@ class GameBasics extends Entity {
 		ctx.strokeStyle = this.config.borderColor;
 
 		let leftTop = this.center.copy().sub(viewpoint);
-		//let rightBottom = this.center.copy().add(viewpoint);
 
 		// Left
 		if (viewpoint.x <= this.center.x) {
