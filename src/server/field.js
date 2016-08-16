@@ -2,9 +2,14 @@ import Log from 'common/log';
 import Utils from 'common/utils';
 import Vector from 'common/vector';
 import Entity from 'common/entity';
+import Element from 'common/element';
 import QuadTree from 'simple-quadtree';
 
 let log = new Log('Field');
+
+class Dot extends Element {
+
+}
 
 class Field extends Entity {
 	constructor(game, options) {
@@ -30,6 +35,8 @@ class Field extends Entity {
 
 		this.generateField();
 		this.generateHeatMap();
+
+		this.generateDots();
 	}
 
 	generateField() {
@@ -48,12 +55,43 @@ class Field extends Entity {
 				});
 				let value = this.field(new Vector(x, y));
 				this.sectors.push({
+					id: i,
+					x: x,
+					y: y,
+					w: sectorSize,
+					h: sectorSize,
 					max: value,
 					value: value
 				});
 				i += 1;
 			}
 		}
+	}
+
+	generateDots() {
+		if (1)
+			return;
+		let dotsCount = 0;
+		this.sectors.forEach((sector)=>{
+			let dots = sector.dots = [];
+			let posMin = new Vector(sector.x, sector.y);
+			let posMax = posMin.copy().add(new Vector(sector.w, sector.h));
+
+			for (let i=0; i < sector.value; i += this.sectorSize) {
+				let start = new Vector(Utils.randomInRange(posMin.x, posMax.x), Utils.randomInRange(posMin.y, posMax.y));
+				let dot = new Dot(this.game, {
+					radius: 1,
+					color: '#f60',
+					start: start
+				});
+				dots.push(dot);
+				this.game.add(dot);
+			}
+
+			dotsCount += dots.length;
+		});
+
+		log.debug('dots created:', dotsCount);
 	}
 
 	field(coords) {
@@ -125,6 +163,7 @@ class Field extends Entity {
 
 	tick() {
 		let basicRecovery = 1;
+		this.flows = [];
 		this.tree.get({
 			x: 0,
 			y: 0,
@@ -146,9 +185,16 @@ class Field extends Entity {
 			if (nearby) {
 				let recovery = Math.round(Math.sqrt(diff));
 				let point = new Vector(nearby.x+10, nearby.y+10);
-				let power = this.consume(point, 1, recovery, true);
+				let drained = this.consume(point, 1, recovery, true);
+				let consumed = Math.min(drained, diff);
+				data.value += consumed;
 
-				data.value += Math.min(power, diff);
+				this.flows.push({
+					from: nearby.id,
+					to: sector.id,
+					drained: Math.ceil(drained),
+					consumed: Math.floor(consumed)
+				});
 			}
 		});
 	}
@@ -214,9 +260,12 @@ class Field extends Entity {
 		return sectors.map((sector)=>{
 			let data = this.sectors[sector.id];
 			return {
+				id: sector.id,
 				value: data.value,
 				x: sector.x,
 				y: sector.y,
+				w: sector.w,
+				h: sector.h,
 				heat: data.heat
 			};
 		});

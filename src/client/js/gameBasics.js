@@ -275,6 +275,10 @@ class GameBasics extends Entity {
 		}
 	}
 
+	drawObjects() {
+		this.iterate((object)=>this.canvas.add(object));
+	}
+
 	tick() {
 		this.canvas.clear();
 
@@ -287,7 +291,7 @@ class GameBasics extends Entity {
 		this.drawGrid();
 		this.drawBorder();
 
-		this.iterate((object)=>this.canvas.add(object));
+		this.drawObjects();
 
 		this.iterateUI((object)=>this.canvas.add(object));
 	}

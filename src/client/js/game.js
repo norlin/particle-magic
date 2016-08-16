@@ -1,10 +1,12 @@
 import Log from 'common/log';
+import Utils from 'common/utils';
 import Vector from 'common/vector';
 import Keys from './keys';
 import Socket from './connection';
 import GameBasics from './gameBasics';
 import ClientPlayer from './player';
 import Element from './element';
+import Field from './field';
 
 let log = new Log('Game');
 
@@ -13,6 +15,9 @@ class Game extends GameBasics {
 		super(options);
 
 		this.targetDirections = [];
+
+		this.field = new Field(this, {});
+		this.add(this.field);
 
 		this.connect();
 	}
@@ -77,6 +82,11 @@ class Game extends GameBasics {
 			let visible = data.visible;
 
 			this.iterate((object)=>{
+				if (object._client) {
+					// skip client-only object
+					return;
+				}
+
 				let id = object.id;
 
 				if (id == this.player.id) {
@@ -117,7 +127,7 @@ class Game extends GameBasics {
 				});
 			}
 
-			this.sectors = data.sectors||[];
+			this.field.update(data);
 		});
 	}
 
@@ -234,21 +244,10 @@ class Game extends GameBasics {
 				width: 5
 			});
 		});
-
-		this.iterateUI((object)=>this.canvas.add(object));
 	}
 
 	drawGrid() {
 		super.drawGrid();
-
-		if (this.debug) {
-			this.sectors.forEach((sector)=>{
-				let sectorPoint = new Vector(sector.x, sector.y);
-				let pos = this.toScreenCoords(sectorPoint);
-				this.canvas.drawText(pos.add(50), Math.floor(sector.value));
-				this.canvas.drawText(pos.add(10), sector.heat, '#f00');
-			});
-		}
 	}
 
 	onDie() {

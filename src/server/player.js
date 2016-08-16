@@ -183,6 +183,7 @@ class Player extends Element {
 		let area = this.viewport();
 		data.visible = this.game.getVisibleObjects(this.id, area);
 		data.sectors = this.game.field.getVisibleSectors(area);
+		data.flows = this.game.field.flows;
 
 		this.socket.emit('update', data);
 	}
