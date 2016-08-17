@@ -5,7 +5,8 @@ const map = {
 	DOWN: 40,
 	ENTER: 13,
 	SPACE: 32,
-	TAB: 9
+	TAB: 9,
+	P: 80
 };
 
 class Keys {

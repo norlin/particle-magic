@@ -43,6 +43,10 @@ class Player extends Element {
 			this.launchFire(data);
 		});
 
+		socket.on('purgeEnergy', (data)=>{
+			this.purgeEnergy();
+		});
+
 		socket.on('aimStart', ()=>{
 			this.aim = true;
 			this.stopMovement();
@@ -137,6 +141,12 @@ class Player extends Element {
 
 		this.casting = true;
 		fireball.start();
+	}
+
+	purgeEnergy() {
+		this.game.field.feed(this.pos(), this.energy);
+		this.energy = 0;
+		this.maxEnergy = 0;
 	}
 
 	tick() {

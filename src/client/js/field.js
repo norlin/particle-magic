@@ -82,6 +82,9 @@ class Field extends Entity {
 	}
 
 	draw(canvas) {
+		if (0) {
+			return;
+		}
 		//log.debug('draw');
 		let count = 0;
 		this.sectors.forEach((sector)=>{

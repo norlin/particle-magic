@@ -105,9 +105,13 @@ class Field extends Entity {
 					return;
 				}
 
+				if (currentDiff < 0) {
+					diff -= currentDiff * 2;
+				}
+
 				let power = Math.sqrt(diff*2);
 
-				let drained = this.consume(new Vector(sector.x+10, sector.y+10), 1, power, true, nearby.id);
+				let drained = this.consume(sector.id, 1, power, true, nearby.id);
 				nearby.value += drained;
 			}
 		});
@@ -158,29 +162,26 @@ class Field extends Entity {
 	}
 
 	getMinimalSector(id) {
-		let current = this.sectors[id];
-		let nearbies = this.getNearbiesTo(id);
+		let uniqueNearbies = [];
 
-		nearbies = nearbies.map((id)=>{
+		let nearbies = this.getNearbiesTo(id);
+		nearbies.forEach((id)=>{
 			let sector = this.sectors[id];
-			if (!sector) {
-				log.error('id:', id, 'sectors: ', this.sectors.length);
-				throw 'no sector found!';
+
+			if (sector.value < sector.max) {
+				uniqueNearbies.push(sector);
 			}
-			return sector;
-		}).filter((sector)=>{
-			return sector.value < sector.max;
 		});
 
-		if (!nearbies.length) {
+		if (!uniqueNearbies.length) {
 			return;
 		}
 
-		nearbies.sort((a, b)=>{
+		uniqueNearbies.sort((a, b)=>{
 			return a.value - b.value;
 		});
 
-		return nearbies[0];
+		return uniqueNearbies[0];
 	}
 
 	getVisibleSectors(area) {
@@ -205,16 +206,22 @@ class Field extends Entity {
 	}
 
 	consume(pos, radius, power, isFlow, to) {
-		pos = pos.copy().sub(radius);
+		let sectors;
 
-		let area = {
-			x: pos.x,
-			y: pos.y,
-			w: radius * 2,
-			h: radius * 2
-		};
+		if (typeof(pos) === 'number') {
+			sectors = [this.sectors[pos]];
+		} else {
+			pos = pos.copy().sub(radius);
 
-		let sectors = this.tree.get(area);
+			let area = {
+				x: pos.x,
+				y: pos.y,
+				w: radius * 2,
+				h: radius * 2
+			};
+
+			sectors = this.tree.get(area);
+		}
 
 		let drainPower = power / sectors.length;
 		let drained = 0;
@@ -242,6 +249,13 @@ class Field extends Entity {
 
 
 		return drained;
+	}
+
+	feed(pos, amount) {
+		let id = this.getByCoordinates(pos);
+		let sector = this.sectors[id];
+
+		sector.value += amount;
 	}
 }
 

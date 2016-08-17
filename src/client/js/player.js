@@ -99,6 +99,10 @@ class ClientPlayer extends Element {
 				this.launchFire();
 			}
 		});
+
+		this.game.addKeyUpListener(Keys.P, (event)=>{
+			this.purgeEnergy();
+		});
 	}
 
 	setKeyboardTarget() {
@@ -141,6 +145,10 @@ class ClientPlayer extends Element {
 		let particle = new Particle({type: 'fire'});
 
 		this.aim = new Aim(this, {color: particle.color});
+	}
+
+	purgeEnergy() {
+		this.socket.emit('purgeEnergy');
 	}
 
 	updateTarget() {
