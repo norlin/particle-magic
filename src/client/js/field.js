@@ -69,6 +69,8 @@ class Field extends Entity {
 	update(data) {
 		this.sectors = data.sectors||[];
 		this.generateDots(data.flows);
+		this.activeSector = data.activeSector;
+		this.nearbies = data.nearbies;
 		//this.generateDots();
 	}
 
@@ -92,12 +94,21 @@ class Field extends Entity {
 			this.sectors.forEach((sector)=>{
 				let sectorPoint = new Vector(sector.x, sector.y);
 				let pos = this.game.toScreenCoords(sectorPoint);
-				canvas.drawText(pos.add(50), Math.floor(sector.value));
-				canvas.drawText(pos.add(10), sector.heat, '#f00');
+				canvas.drawText(pos.add(50), sector.id, '#f00');
+				canvas.drawText(pos.add({x: 0, y: 10}), Math.floor(sector.value));
+
+				if (this.activeSector === sector.id) {
+					canvas.drawText(pos.add({x: 0, y: 10}), 'active', '#f00');
+				}
+
+				if (this.nearbies.indexOf(sector.id) > -1) {
+					canvas.drawText(pos.add({x: 0, y: 10}), 'nearby', '#00f');
+				}
 			});
 		}
 
 		canvas.drawText(new Vector(10, this.game.screen.y - 60), `Dots: ${count}`);
+		canvas.drawText(new Vector(10, this.game.screen.y - 80), `Active: ${this.activeSector}`);
 	}
 }
 

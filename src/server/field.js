@@ -34,9 +34,6 @@ class Field extends Entity {
 		this.tree = QuadTree(0, 0, this.size.x, this.size.y);
 
 		this.generateField();
-		this.generateHeatMap();
-
-		this.generateDots();
 	}
 
 	generateField() {
@@ -46,6 +43,8 @@ class Field extends Entity {
 		let i = 0;
 		for (let x = 0; x < this.size.x; x += sectorSize) {
 			for (let y = 0; y < this.size.y; y += sectorSize) {
+				// TODO: unify sectors data
+				// TODO: get rid of tree? (calculate by coordinates)
 				this.tree.put({
 					id: i,
 					x: x,
@@ -66,32 +65,10 @@ class Field extends Entity {
 				i += 1;
 			}
 		}
-	}
 
-	generateDots() {
-		if (1)
-			return;
-		let dotsCount = 0;
-		this.sectors.forEach((sector)=>{
-			let dots = sector.dots = [];
-			let posMin = new Vector(sector.x, sector.y);
-			let posMax = posMin.copy().add(new Vector(sector.w, sector.h));
-
-			for (let i=0; i < sector.value; i += this.sectorSize) {
-				let start = new Vector(Utils.randomInRange(posMin.x, posMax.x), Utils.randomInRange(posMin.y, posMax.y));
-				let dot = new Dot(this.game, {
-					radius: 1,
-					color: '#f60',
-					start: start
-				});
-				dots.push(dot);
-				this.game.add(dot);
-			}
-
-			dotsCount += dots.length;
-		});
-
-		log.debug('dots created:', dotsCount);
+		let rowLength = Math.ceil(this.size.x / this.sectorSize);
+		let colLength = Math.ceil(this.size.y / this.sectorSize);
+		this.sizeInSectors = new Vector(rowLength, colLength);
 	}
 
 	field(coords) {
@@ -115,138 +92,95 @@ class Field extends Entity {
 		return basic;
 	}
 
-	generateHeatMap() {
-		log.debug('generate sources heatmap');
-
-		let start = [];
-		this.dips.forEach((dip)=>{
-			start = start.concat(this.tree.get({
-				x: dip.pos.x,
-				y: dip.pos.y,
-				w: 0,
-				h: 0
-			}));
-		});
-
-		let field = this;
-		let heat = 0;
-		function updateSectors(sectors) {
-			let nearby = new Set();
-			let append = nearby.add.bind(nearby);
-
-			sectors.forEach((sector)=>{
-				let data = field.sectors[sector.id];
-				data.heat = heat;
-
-				field.getNearSectors(sector).forEach(append);
-			});
-
-			if (nearby.size) {
-				heat += 1;
-				updateSectors(nearby);
-			}
-		}
-
-		updateSectors(start);
-	}
-
-	getNearSectors(sector) {
-		return this.tree.get({
-			x: sector.x-1,
-			y: sector.y-1,
-			w: sector.w+1,
-			h: sector.h+1
-		}).filter((nearby)=>{
-			return this.sectors[nearby.id].heat===undefined;
-		});
-	}
-
 	tick() {
-		let basicRecovery = 1;
 		this.flows = [];
-		this.tree.get({
-			x: 0,
-			y: 0,
-			w: this.size.x,
-			h: this.size.y
-		}).forEach((sector)=>{
-			let data = this.sectors[sector.id];
-			if (0 && data.drained) {
-				data.drained = false;
-				return;
-			}
 
-			let diff = data.max - data.value;
-			if (diff === 0) {
-				return;
-			}
-
-			let nearby = this.getNearbyMinimum(sector);
+		this.sectors.forEach((sector)=>{
+			let nearby = this.getMinimalSector(sector.id);
 			if (nearby) {
-				let recovery = Math.round(Math.sqrt(diff));
-				let point = new Vector(nearby.x+10, nearby.y+10);
-				let drained = this.consume(point, 1, recovery, true);
-				let consumed = Math.min(drained, diff);
-				data.value += consumed;
+				let currentDiff = sector.max - sector.value;
+				let diff = nearby.max - nearby.value;
 
-				this.flows.push({
-					from: nearby.id,
-					to: sector.id,
-					drained: Math.ceil(drained),
-					consumed: Math.floor(consumed)
-				});
+				if (diff <= currentDiff) {
+					return;
+				}
+
+				let power = Math.sqrt(diff*2);
+
+				let drained = this.consume(new Vector(sector.x+10, sector.y+10), 1, power, true, nearby.id);
+				nearby.value += drained;
 			}
 		});
 	}
 
-	getNearbyMinimum(sector) {
-		let nearby = this.tree.get({
-			x: sector.x-1,
-			y: sector.y-1,
-			w: sector.w+1,
-			h: sector.h+1
-		}).filter((sector)=>{
-			let data = this.sectors[sector.id];
-			return !!data.value;
-		});
+	getBySectorPosition(colNum, rowNum) {
+		return colNum * this.sizeInSectors.y + rowNum;
+	}
 
-		if (!nearby.length) {
-			return;
-		}
+	getByCoordinates(pos) {
+		let colNum = Math.floor(pos.x / this.sectorSize);
+		let rowNum = Math.floor(pos.y / this.sectorSize);
 
-		nearby.sort((a, b)=>{
-			let dataA = this.sectors[a.id];
-			let dataB = this.sectors[b.id];
+		return this.getBySectorPosition(colNum, rowNum);
+	}
 
-			if (dataA.heat === dataB.heat) {
-				let valueA = dataA.value;
-				let valueB = dataB.value;
-				return valueA<valueB;
+	getNearbiesTo(id, radius) {
+		let result = [];
+		radius = radius || 1;
+
+		let colNum = Math.floor(id / this.sizeInSectors.y);
+		let rowNum = id - colNum * this.sizeInSectors.y;
+
+		// into both sides + current sector
+		for (let x = -radius; x <= radius; x += 1) {
+			let colPos = colNum + x;
+
+			if (colPos < 0 || colPos >= this.sizeInSectors.x) {
+				continue;
 			}
 
-			return dataA.heat>dataB.heat;
+			for (let y = -radius; y <= radius; y += 1) {
+				let rowPos = rowNum + y;
+
+				if (rowPos < 0 || rowPos >= this.sizeInSectors.y) {
+					continue;
+				}
+
+				if (x === 0 && y === 0) {
+					// skip current sector;
+					continue;
+				}
+				result.push(this.getBySectorPosition(colPos, rowPos));
+			}
+		}
+
+		return result;
+	}
+
+	getMinimalSector(id) {
+		let current = this.sectors[id];
+		let nearbies = this.getNearbiesTo(id);
+
+		nearbies = nearbies.map((id)=>{
+			let sector = this.sectors[id];
+			if (!sector) {
+				log.error('id:', id, 'sectors: ', this.sectors.length);
+				throw 'no sector found!';
+			}
+			return sector;
+		}).filter((sector)=>{
+			return sector.value < sector.max;
 		});
 
-		let minData = this.sectors[nearby[0].id];
-
-		let minHeat = minData.heat;
-		let maxValue = minData.value;
-
-		nearby = nearby.filter((sector)=>{
-			let data = this.sectors[sector.id];
-			return data.heat == minHeat && data.value == maxValue;
-		});
-
-		if (!nearby.length) {
+		if (!nearbies.length) {
 			return;
 		}
 
-		if (nearby.length == 1) {
-			return nearby[0];
-		}
+		nearbies.sort((a, b)=>{
+			return a.value - b.value;
+		});
 
-		let random = Utils.randomInRange(0, nearby.length);
-		return nearby[random];
+		return nearbies[0];
 	}
 
 	getVisibleSectors(area) {
@@ -260,18 +194,17 @@ class Field extends Entity {
 		return sectors.map((sector)=>{
 			let data = this.sectors[sector.id];
 			return {
-				id: sector.id,
+				id: data.id,
 				value: data.value,
-				x: sector.x,
-				y: sector.y,
-				w: sector.w,
-				h: sector.h,
-				heat: data.heat
+				x: data.x,
+				y: data.y,
+				w: data.w,
+				h: data.h
 			};
 		});
 	}
 
-	consume(pos, radius, power, isFlow) {
+	consume(pos, radius, power, isFlow, to) {
 		pos = pos.copy().sub(radius);
 
 		let area = {
@@ -281,21 +214,32 @@ class Field extends Entity {
 			h: radius * 2
 		};
 
-		let points = this.tree.get(area);
+		let sectors = this.tree.get(area);
 
-		let drainPower = power / points.length;
+		let drainPower = power / sectors.length;
 		let drained = 0;
-		points.forEach((point)=>{
-			let sector = this.sectors[point.id];
+		sectors.forEach((sector)=>{
+			let data = this.sectors[sector.id];
 
-			let value = sector.value;
+			let value = data.value;
 			let power = Math.min(value, drainPower);
 			drained += power;
 			value -= power;
 
-			sector.value = value;
-			sector.drained = !isFlow;
+			data.value = value;
+			data.drained = !isFlow;
+
+			if (!to) {
+				return;
+			}
+
+			this.flows.push({
+				from: data.id,
+				to: to,
+				drained: power
+			});
 		});
+
 
 		return drained;
 	}

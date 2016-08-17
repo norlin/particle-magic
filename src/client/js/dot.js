@@ -13,6 +13,8 @@ class Dot extends Element {
 	}
 
 	initParams() {
+		this._speed = 10;
+		this.radius = 1;
 		this.color = this.options.color || Utils.getRandomColor();
 	}
 
@@ -43,6 +45,7 @@ class Dot extends Element {
 		let compare = this.pos().sub(this.target);
 		if (Math.abs(compare.x) < 1 && Math.abs(compare.y) < 1) {
 			this.stopMovement();
+			this.target = undefined;
 		}
 	}
 

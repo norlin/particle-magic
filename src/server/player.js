@@ -184,6 +184,8 @@ class Player extends Element {
 		data.visible = this.game.getVisibleObjects(this.id, area);
 		data.sectors = this.game.field.getVisibleSectors(area);
 		data.flows = this.game.field.flows;
+		data.activeSector = this.game.field.getByCoordinates(this.pos());
+		data.nearbies = this.game.field.getNearbiesTo(data.activeSector);
 
 		this.socket.emit('update', data);
 	}

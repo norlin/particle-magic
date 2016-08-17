@@ -31,8 +31,7 @@ class Element extends Entity {
 			return;
 		}
 
-		let pos = this.pos();
-		let target = this.target.copy().sub(pos);
+		let target = this.target.copy().sub(this._position);
 
 		if (!target.x && !target.y) {
 			return;
@@ -44,7 +43,7 @@ class Element extends Entity {
 		let radius = this.radius;
 		let deltaDist = dist / (50 + radius);
 
-		if (dist < (50 + this.radius)) {
+		if (dist < (50 + radius)) {
 			delta.multBy(deltaDist);
 		}
 
