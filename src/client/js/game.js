@@ -163,6 +163,7 @@ class Game extends GameBasics {
 			existing._position = new Vector(object.x, object.y);
 			existing.radius = object.data.radius;
 			existing.count = object.data.count;
+			existing.target = object.data.target;
 			existing.update();
 			break;
 		}

@@ -18,10 +18,7 @@ class Dot extends Element {
 		this.color = this.options.color || Utils.getRandomColor();
 	}
 
-	setPosition(sector) {
-		let move = sector !== undefined;
-		sector = move ? sector : this.sector;
-
+	getPositionBySector(sector) {
 		let x, y;
 		if (sector.radius) {
 			let distance = Utils.randomDouble(0, sector.radius);
@@ -35,11 +32,18 @@ class Dot extends Element {
 			y = Utils.randomInRange(sector.y, sector.y + sector.h);
 		}
 
-		let newPosition = new Vector(x, y);
+		return new Vector(x, y);
+	}
+
+	setPosition(sector) {
+		let move = !!sector;
+		sector = move ? sector : this.sector;
+
+		let newPosition = this.getPositionBySector(sector);
 
 		if (move) {
-			this.target = newPosition;
 			this.sector = sector;
+			this.target = newPosition;
 		} else {
 			this._position = newPosition;
 		}

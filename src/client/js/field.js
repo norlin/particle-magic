@@ -12,6 +12,8 @@ class Field extends Entity {
 
 		this._client = true;
 
+		this.visibility = 0.2;
+
 		this.sectors = [];
 		this.dots = {};
 	}
@@ -25,21 +27,35 @@ class Field extends Entity {
 			}
 
 			let dotsFrom = sectorFrom.dots;
-			let dots = dotsFrom.splice(0, flow.drained);
-			if (flow.consumed < flow.drained) {
-				dots.length = flow.consumed;
+			let drained = Math.ceil(flow.drained * this.visibility);
+			let consumed = Math.ceil(flow.consumed * this.visibility);
+
+			let dots = dotsFrom.splice(0, drained);
+			if (consumed < drained) {
+				dots.length = consumed;
 			}
 
-			let sectorTo = this.dots[flow.to];
+			let sectorTo = this.dots[flow.to] || this.game.objects[flow.to];
 			if (!sectorTo) {
 				return;
 			}
 
-			let dotsTo = sectorTo && sectorTo.dots;
+			let dotsTo = sectorTo.dots;
 
 			dots.forEach((dot)=>{
-				dot.setPosition(sectorTo.sector);
-				dotsTo.push(dot);
+				if (sectorTo.radius) {
+					dot.setPosition({
+						x: sectorTo._position.x,
+						y: sectorTo._position.y,
+						radius: sectorTo.radius||1
+					});
+				} else {
+					dot.setPosition(sectorTo.sector);
+				}
+
+				if (dotsTo) {
+					dotsTo.push(dot);
+				}
 			});
 		});
 
@@ -49,7 +65,7 @@ class Field extends Entity {
 				dots: []
 			};
 			let dots = sectorData.dots;
-			let count = Math.floor(sector.value / 10);
+			let count = Math.floor(sector.value * this.visibility);
 
 			let diff = count - dots.length;
 			if (diff < 0) {

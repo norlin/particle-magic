@@ -9,7 +9,7 @@ class Collector extends Skill {
 		super(caster, options, parent);
 
 		this.radius = 50;
-		this.power = 1;
+		this.power = 100;
 
 		this.initCost = 10;
 		this.tickCost = 1;
@@ -44,7 +44,7 @@ class Collector extends Skill {
 			this.cloud = new ParticlesCloud(this, {
 				particle: 'fire',
 				count: 0,
-				radius: 1,
+				radius: 10,
 				start: this.pos()
 			});
 
@@ -77,7 +77,7 @@ class Collector extends Skill {
 			return;
 		}
 
-		let drained = this.game.field.consume(this.pos(), this.radius, this.power);
+		let drained = this.game.field.consume(this.pos(), this.radius, this.power, false, this.cloud.id);
 		this.cloud.feed(drained);
 
 		if (this.duration > 0) {

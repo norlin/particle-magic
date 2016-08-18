@@ -161,7 +161,7 @@ class Player extends Element {
 		}
 
 		if (this.energy < this.maxEnergy) {
-			let drained = this.game.field.consume(this.pos(), Math.sqrt(this.power), this.power);
+			let drained = this.game.field.consume(this.pos(), Math.sqrt(this.power), this.power, false, this.id);
 			this.energy = Math.min(this.maxEnergy, this.energy + drained);
 		}
 	}

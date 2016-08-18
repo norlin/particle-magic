@@ -124,7 +124,7 @@ class Game extends Entity {
 			return;
 		}
 
-		let basicPower = 10;
+		let basicPower = 1;
 
 		let player = new Player(this, socket, {
 			id: socket.id,

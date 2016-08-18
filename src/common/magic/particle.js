@@ -116,7 +116,6 @@ class ParticlesCloud extends Element {
 
 	feed(amount) {
 		this.count += amount;
-		this.radius += amount;
 
 		this.timer = 0;
 	}
@@ -125,7 +124,11 @@ class ParticlesCloud extends Element {
 		return {
 			radius: this.radius,
 			particle: this.options.particle,
-			count: this.count
+			count: this.count,
+			target: this.target ? {
+				x: this.target.x,
+				y: this.target.y
+			} : undefined
 		};
 	}
 }
