@@ -88,6 +88,14 @@ class ParticlesCloud extends Element {
 			this.move();
 		}
 
+		if (this.feedTimeout) {
+			this.feedTimeout -= 1;
+			if (this.feedTimeout === 0) {
+				this.emit('collected');
+			}
+			return;
+		}
+
 		this.timer += 1;
 		if (this.timer > this.lifetime) {
 			this.blast();
@@ -114,10 +122,11 @@ class ParticlesCloud extends Element {
 		this.blast();
 	}
 
-	feed(amount) {
+	feed(amount, timout) {
 		this.count += amount;
 
 		this.timer = 0;
+		this.feedTimeout = timout+1;
 	}
 
 	getData() {

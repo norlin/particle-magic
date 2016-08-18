@@ -164,7 +164,6 @@ class Game extends GameBasics {
 			existing.radius = object.data.radius;
 			existing.count = object.data.count;
 			existing.target = object.data.target;
-			existing.update();
 			break;
 		}
 	}

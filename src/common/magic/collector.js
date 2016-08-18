@@ -60,6 +60,14 @@ class Collector extends Skill {
 				this.state = SkillStates.ERR;
 			});
 
+			let onCollected = (function(){
+				if (this.duration === 0) {
+					this.state = SkillStates.DONE;
+					this.cloud.removeListener('collected', onCollected);
+				}
+			}).bind(this);
+			this.cloud.on('collected', onCollected);
+
 			// handler for other skills
 			this.parent.addObject(objectId, this.cloud);
 			this.game.add(this.cloud);
@@ -78,12 +86,16 @@ class Collector extends Skill {
 		}
 
 		let drained = this.game.field.consume(this.pos(), this.radius, this.power, false, this.cloud.id);
-		this.cloud.feed(drained);
+
+		// TODO: calculate feeding time more correctly
+		let cloudPos = this.cloud.pos();
+		let distance = cloudPos.sub(this.pos()).add(this.game.field.sectorSize).magnitude() + this.radius;
+		this.cloud.feed(drained, Math.ceil(distance / 10));
 
 		if (this.duration > 0) {
 			this.duration -= 1;
 		} else {
-			this.state = SkillStates.DONE;
+			this.state = SkillStates.WAIT;
 		}
 	}
 

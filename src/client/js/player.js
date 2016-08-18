@@ -13,6 +13,7 @@ class ClientPlayer extends Element {
 		super(game, options);
 
 		this.socket = socket;
+		this.dots = [];
 
 		this.addListeners();
 	}
@@ -189,6 +190,16 @@ class ClientPlayer extends Element {
 			}
 		}
 
+		this.dots.forEach((dot, i)=>{
+			if (dot.target) {
+				dot.tick();
+			} else {
+				this.dots[i] = undefined;
+			}
+		});
+
+		this.dots = this.dots.filter((dot)=>!!dot);
+
 		if (this.aim) {
 			this.aim.tick();
 		}
@@ -196,6 +207,8 @@ class ClientPlayer extends Element {
 
 	draw(canvas) {
 		super.draw(canvas);
+
+		this.dots.forEach((dot)=>dot.draw(canvas));
 
 		if (this.aim) {
 			this.aim.draw(canvas);

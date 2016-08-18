@@ -95,6 +95,10 @@ class Field extends Entity {
 	tick() {
 		this.flows = [];
 
+		if (1) {
+			return;
+		}
+
 		this.sectors.forEach((sector)=>{
 			let nearby = this.getMinimalSector(sector.id);
 			if (nearby) {
