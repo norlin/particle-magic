@@ -28,6 +28,11 @@ class Particle {
 		this.power = types[this.type].power;
 		this.color = types[this.type].color;
 	}
+
+	getColor() {
+		// TODO: randomize
+		return this.color;
+	}
 }
 
 class ParticlesCloud extends Element {
@@ -38,6 +43,8 @@ class ParticlesCloud extends Element {
 
 		super(parent.game, options);
 		options = this.options;
+
+		this.type = 'cloud';
 
 		this.parent = parent;
 
@@ -87,14 +94,6 @@ class ParticlesCloud extends Element {
 		}
 	}
 
-	draw() {
-		if (!this.game.canvas) {
-			return;
-		}
-
-		super.draw(this.game.canvas);
-	}
-
 	collision(object){
 		let power;
 		switch (this.particle.type) {
@@ -120,6 +119,14 @@ class ParticlesCloud extends Element {
 		this.radius += amount;
 
 		this.timer = 0;
+	}
+
+	getData() {
+		return {
+			radius: this.radius,
+			particle: this.options.particle,
+			count: this.count
+		};
 	}
 }
 

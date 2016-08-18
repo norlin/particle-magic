@@ -5,6 +5,8 @@ class Entity extends EventEmitter {
 	constructor(game, options) {
 		super();
 
+		this.type = 'object';
+
 		this.id = options.id || Utils.uuid();
 
 		if (game) {
@@ -12,6 +14,10 @@ class Entity extends EventEmitter {
 		}
 
 		this.options = Object.assign({}, this.options, options);
+	}
+
+	getData() {
+		return {};
 	}
 }
 

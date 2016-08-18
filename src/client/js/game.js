@@ -7,6 +7,7 @@ import GameBasics from './gameBasics';
 import ClientPlayer from './player';
 import Element from './element';
 import Field from './field';
+import {ClientParticlesCloud} from './particle';
 
 let log = new Log('Game');
 
@@ -111,24 +112,60 @@ class Game extends GameBasics {
 				}
 
 				if (existing) {
-					existing._position = new Vector(newObject.x, newObject.y);
-					existing.radius = newObject.radius;
-					existing.color = newObject.color;
-					existing.hits = newObject.hits;
+					this.updateVisible(existing, newObject);
 					continue;
 				}
 
-				this.addMass({
-					id: id,
-					start: new Vector(newObject.x, newObject.y),
-					radius: newObject.radius,
-					color: newObject.color,
-					hits: newObject.hits
-				});
+				this.addVisible(newObject);
 			}
 
 			this.field.update(data);
 		});
+	}
+
+	addVisible(object) {
+		switch (object.type) {
+		case 'player':
+		case 'object':
+			let mass = new Element(this, {
+				id: object.id,
+				start: new Vector(object.x, object.y),
+				radius: object.data.radius,
+				color: object.data.color,
+				hits: object.hits
+			});
+
+			this.add(mass);
+			break;
+		case 'cloud':
+			let cloud = new ClientParticlesCloud({game: this}, {
+				id: object.id,
+				start: new Vector(object.x, object.y),
+				radius: object.data.radius,
+				particle: object.data.particle
+			});
+
+			this.add(cloud);
+			break;
+		}
+	}
+
+	updateVisible(existing, object) {
+		switch (existing.type) {
+		case 'player':
+		case 'object':
+			existing._position = new Vector(object.x, object.y);
+			existing.radius = object.data.radius;
+			existing.color = object.data.color;
+			existing.hits = object.hits;
+			break;
+		case 'cloud':
+			existing._position = new Vector(object.x, object.y);
+			existing.radius = object.data.radius;
+			existing.count = object.data.count;
+			existing.update();
+			break;
+		}
 	}
 
 	addPlayer(player) {
@@ -136,12 +173,6 @@ class Game extends GameBasics {
 		this.add(player);
 
 		this.viewpoint = this.player.pos();
-	}
-
-	addMass(options) {
-		let mass = new Element(this, options);
-
-		this.add(mass);
 	}
 
 	start() {

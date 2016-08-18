@@ -93,6 +93,13 @@ class Element extends Entity {
 
 		this.target = this._position.copy();
 	}
+
+	getData() {
+		return {
+			radius: this.radius,
+			color: this.color
+		};
+	}
 }
 
 export default Element;

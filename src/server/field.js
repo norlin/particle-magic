@@ -247,7 +247,6 @@ class Field extends Entity {
 			});
 		});
 
-
 		return drained;
 	}
 

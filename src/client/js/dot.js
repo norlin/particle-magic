@@ -22,8 +22,18 @@ class Dot extends Element {
 		let move = sector !== undefined;
 		sector = move ? sector : this.sector;
 
-		let x = Utils.randomInRange(sector.x, sector.x + sector.w);
-		let y = Utils.randomInRange(sector.y, sector.y + sector.h);
+		let x, y;
+		if (sector.radius) {
+			let distance = Utils.randomDouble(0, sector.radius);
+			let angle = Utils.randomDouble(-Math.PI, Math.PI);
+
+			let pos = Vector.fromAngle(angle, distance);
+			x = sector.x + pos.x;
+			y = sector.y + pos.y;
+		} else {
+			x = Utils.randomInRange(sector.x, sector.x + sector.w);
+			y = Utils.randomInRange(sector.y, sector.y + sector.h);
+		}
 
 		let newPosition = new Vector(x, y);
 

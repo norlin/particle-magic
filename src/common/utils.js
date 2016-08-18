@@ -17,8 +17,12 @@ class Utils {
 		return Math.min(max, Math.max(min, value));
 	}
 
+	randomDouble(min, max) {
+		return Math.random() * (max-min) + min;
+	}
+
 	randomInRange(min, max) {
-		return Math.floor(Math.random() * (max-min) + min);
+		return Math.floor(this.randomDouble(min, max));
 	}
 
 	getRandomColor() {
