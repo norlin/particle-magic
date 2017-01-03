@@ -31,6 +31,7 @@ class Player extends Element {
 	listen() {
 		let socket = this.socket;
 
+		socket.removeAllListeners('setTarget');
 		socket.on('setTarget', (point)=>{
 			if (this.aim) {
 				return;
@@ -39,14 +40,27 @@ class Player extends Element {
 			this.target = new Vector(point.x, point.y);
 		});
 
+		socket.removeAllListeners('stop');
+		socket.on('stop', (point)=>{
+			this.target = this._position.copy();
+		});
+
+		socket.removeAllListeners('launchFire');
 		socket.on('launchFire', (data)=>{
 			this.launchFire(data);
 		});
 
+		socket.removeAllListeners('setShield');
+		socket.on('setShield', ()=>{
+			this.setShield();
+		});
+
+		socket.removeAllListeners('purgeEnergy');
 		socket.on('purgeEnergy', (data)=>{
 			this.purgeEnergy();
 		});
 
+		socket.removeAllListeners('aimStart');
 		socket.on('aimStart', ()=>{
 			this.aim = true;
 			this.stopMovement();
@@ -95,7 +109,7 @@ class Player extends Element {
 	}
 
 	drain(amount) {
-		if (this.energy < amount) {
+		if (!this.energy || this.energy < amount) {
 			return false;
 		}
 
@@ -121,12 +135,14 @@ class Player extends Element {
 					options: {
 						identifier: 'fire1',
 						start: fireballPos,
-						duration: 10
+						duration: 10,
+						radius: 10,
+						lifetime: 50,
+						type: 'fire'
 					}
 				},
 				{
 					class: 'Attractor',
-					//identifier: 'fire1',
 					options: {
 						target: 'fire1',
 						start: pos
@@ -141,6 +157,41 @@ class Player extends Element {
 
 		this.casting = true;
 		fireball.start();
+	}
+
+	setShield() {
+		let shieldPos = this.pos();
+		let shield = new Skill(this, {
+			start: shieldPos,
+			queue: [
+				{
+					class: 'Collector',
+					options: {
+						identifier: 'shield1',
+						radius: 100,
+						radiusMin: 99,
+						start: shieldPos,
+						duration: 10,
+						lifetime: 200,
+						type: 'fire'
+					}
+				},
+				{
+					class: 'Bind',
+					options: {
+						object: 'shield1',
+						target: 'caster'
+					}
+				}
+			]
+		});
+
+		shield.once('end', ()=>{
+			this.casting = false;
+		});
+
+		this.casting = true;
+		shield.start();
 	}
 
 	purgeEnergy() {
@@ -191,6 +242,7 @@ class Player extends Element {
 		data.hits = this.hits;
 
 		let area = this.viewport();
+		data.area = area;
 		data.visible = this.game.getVisibleObjects(this.id, area);
 		data.sectors = this.game.field.getVisibleSectors(area);
 		data.flows = this.game.field.flows;
@@ -208,10 +260,10 @@ class Player extends Element {
 		let offset = 50;
 
 		return {
-			left: pos.x - half.x - offset,
-			right: pos.x + half.x + offset,
-			top: pos.y - half.y - offset,
-			bottom: pos.y + half.y + offset
+			left: Math.max(0, pos.x - half.x - offset),
+			right: Math.min(this.game.config.width, pos.x + half.x + offset),
+			top: Math.max(0, pos.y - half.y - offset),
+			bottom: Math.min(this.game.config.height, pos.y + half.y + offset)
 		};
 	}
 }

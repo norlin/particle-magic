@@ -127,6 +127,10 @@ class Canvas extends Entity {
 		ctx.stroke();
 		ctx.setLineDash([]);
 	}
+
+	drawImage(image, tile, pos) {
+		this.ctx.drawImage(image, tile[0]+1, tile[1]+1, 30, 30, pos.x, pos.y, 32, 32);
+	}
 }
 
 export default Canvas;

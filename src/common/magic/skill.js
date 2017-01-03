@@ -73,6 +73,10 @@ class Skill extends Element {
 	end() {
 		this.emit('end');
 
+		if (Object.keys(this.active).length) {
+			return;
+		}
+
 		if (this.parent) {
 			this.parent.remove(this.id);
 		} else {
@@ -134,7 +138,7 @@ class Skill extends Element {
 			break;
 		}
 
-		if (this.state > SkillStates.IDLE && this.state < SkillStates.END) {
+		if (this.state > SkillStates.IDLE && this.state != SkillStates.ERR) {
 			for (let id in this.active) {
 				let skill = this.active[id];
 				skill.tick();

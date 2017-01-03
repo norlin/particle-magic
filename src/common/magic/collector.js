@@ -9,7 +9,7 @@ class Collector extends Skill {
 		super(caster, options, parent);
 
 		this.radius = 50;
-		this.power = 100;
+		this.power = 1;
 
 		this.initCost = 10;
 		this.tickCost = 1;
@@ -42,9 +42,11 @@ class Collector extends Skill {
 	_createCloud() {
 		if (this.caster.drain(this.initCost)) {
 			this.cloud = new ParticlesCloud(this, {
-				particle: 'fire',
+				particle: this.options.type,
 				count: 0,
-				radius: 10,
+				lifetime: this.options.lifetime,
+				radius: this.options.radius || 10,
+				radiusMin: this.options.radiusMin || 0,
 				start: this.pos()
 			});
 

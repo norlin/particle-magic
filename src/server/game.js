@@ -23,6 +23,8 @@ class Game extends Entity {
 		let width = this.config.width;
 		let height = this.config.height;
 
+		this.map = this.makeMap();
+
 		this.tree = QuadTree(0, 0, width, height);
 
 		this.field = new Field(this, {
@@ -34,6 +36,32 @@ class Game extends Entity {
 
 		this.addListeners(io);
 		this.start();
+	}
+
+	makeMap() {
+		let map = [];
+		let size = this.options.gridSize || 32;
+		let width = Math.floor(this.config.width / size);
+		let height = Math.floor(this.config.height / size);
+
+		for (let x = 0; x < width; x += 1) {
+			let col = map[x] = map[x]||[];
+
+			for (let y = 0; y < height; y += 1) {
+				let cell = Utils.randomInRange(0, 20);
+				if (cell < 17) {
+					col.push(0);
+				} else if (cell == 17) {
+					col.push(1);
+				} else if (cell == 18) {
+					col.push(2);
+				} else if (cell == 19) {
+					col.push(3);
+				}
+			}
+		}
+
+		return map;
 	}
 
 	add(object) {
@@ -117,6 +145,7 @@ class Game extends Entity {
 		});
 
 		socket.emit('config', this.config);
+		socket.emit('map', this.map);
 	}
 
 	onStart(socket, data) {

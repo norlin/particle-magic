@@ -15,6 +15,7 @@ class Server {
 		const io = socket(http);
 
 		app.use(express.static('build/client'));
+		app.use('/assets', express.static('build/assets'));
 
 		http.listen({
 			host: config.host,

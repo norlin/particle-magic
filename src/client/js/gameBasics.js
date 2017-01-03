@@ -27,17 +27,17 @@ class GameBasics extends Entity {
 
 		log.debug(config);
 
-		this.addKeyListener(Keys.ENTER, () => {
+		this.addKeyListener(Keys.ENTER, ()=>{
 			if (this.tickTimer) {
 				this.stop();
 			} else {
 				this.start();
 			}
-		}, true);
+		}, null, true);
 
-		this.addKeyListener(Keys.TAB, () => {
+		this.addKeyListener(Keys.TAB, ()=>{
 			this.debug = !this.debug;
-		}, true);
+		}, null, true);
 
 		this.start();
 	}
@@ -60,6 +60,8 @@ class GameBasics extends Entity {
 		document.body.addEventListener('keydown', (e)=>this.onKeyDown(e), true);
 		document.body.addEventListener('keyup', (e)=>this.onKeyUp(e), true);
 		document.body.addEventListener('click', (e)=>this.onClick(e), true);
+		document.body.addEventListener('mousedown', (e)=>this.onMouseDown(e), true);
+		document.body.addEventListener('mouseup', (e)=>this.onMouseUp(e), true);
 		document.body.addEventListener('mousemove', (e)=>this.onMove(e), true);
 
 		window.addEventListener('resize', ()=>this.updateScreen());
@@ -79,6 +81,8 @@ class GameBasics extends Entity {
 	onKeyDown(event) {
 		let code = event.which;
 
+		event.preventDefault();
+
 		this.emit(`keydown.${code}.global`);
 
 		if (this.tickTimer) {
@@ -88,6 +92,8 @@ class GameBasics extends Entity {
 
 	onKeyUp(event) {
 		let code = event.which;
+
+		event.preventDefault();
 
 		this.emit(`keyup.${code}.global`);
 
@@ -102,9 +108,20 @@ class GameBasics extends Entity {
 		this.direction = this.center.directionTo(mouse);
 	}
 
-	onClick(event) {
+	getMousePoint(event) {
 		let mouse = new Vector(event.clientX, event.clientY);
 		let point = mouse.sub(this.center);
+
+		let pos = this.viewpoint.copy();
+		let gamePoint = pos.add(point);
+
+		return {point, gamePoint};
+	}
+
+	onClick(event) {
+		event.preventDefault();
+
+		let {point, gamePoint} = this.getMousePoint(event);
 
 		this.emit(`click.global`, point);
 
@@ -112,27 +129,69 @@ class GameBasics extends Entity {
 			this.emit(`click`, point);
 		}
 
-		let pos = this.viewpoint.copy();
-		let gamePoint = pos.add(point);
-
 		this.emit(`gameClick`, gamePoint);
 	}
 
-	addKeyListener(key, handler, global) {
-		let isGlobal = global ? '.global' : '';
-		this.on(`keydown.${key}${isGlobal}`, handler);
+	onMouseDown(event) {
+		event.preventDefault();
+
+		let {point, gamePoint} = this.getMousePoint(event);
+
+		this.emit(`mousedown.global`, point);
+
+		if (this.tickTimer) {
+			this.emit(`mousedown`, point);
+		}
+
+		this.emit(`gameMousedown`, gamePoint);
 	}
 
-	addKeyUpListener(key, handler, global) {
+	onMouseUp(event) {
+		event.preventDefault();
+
+		let {point, gamePoint} = this.getMousePoint(event);
+
+		this.emit(`mouseup.global`, point);
+
+		if (this.tickTimer) {
+			this.emit(`mouseup`, point);
+		}
+
+		this.emit(`gameMouseup`, gamePoint);
+	}
+
+	addKeyListener(keys, handlerDown, handlerUp, global) {
 		let isGlobal = global ? '.global' : '';
-		this.on(`keyup.${key}${isGlobal}`, handler);
+		if (!Array.isArray(keys)) {
+			keys = [keys];
+		}
+		keys.forEach((key)=>{
+			if (handlerDown) {
+				this.on(`keydown.${key}${isGlobal}`, handlerDown);
+			}
+			if (handlerUp) {
+				this.on(`keyup.${key}${isGlobal}`, handlerUp);
+			}
+		});
 	}
 
 	addClickListener(handler, inGame, global) {
 		let event = inGame ? 'gameClick' : 'click';
 		let isGlobal = global ? '.global' : '';
 
-		this.on(`${event}${isGlobal}`, handler);
+		this.on(`mousedown${isGlobal}`, handler);
+	}
+
+	addMouseListener(handlerDown, handlerUp, inGame, global) {
+		let event = inGame ? 'gameMouse' : 'mouse';
+		let isGlobal = global ? '.global' : '';
+
+		if (handlerDown) {
+			this.on(`${event}down${isGlobal}`, handlerDown);
+		}
+		if (handlerUp) {
+			this.on(`${event}up${isGlobal}`, handlerUp);
+		}
 	}
 
 	drawGrid() {
@@ -201,11 +260,24 @@ class GameBasics extends Entity {
 	}
 
 	toScreenCoords(vector) {
+		//debugger;
 		let point = vector.copy();
 		let view = this.viewpoint;
 		let corr = view.copy().sub(this.center);
 
-		if (point.x < corr.x) {
+		if (corr.x+this.screen.x > this.config.width && point.x < this.screen.x && point.x < corr.x) {
+			point.x += this.config.width;
+		} else if (corr.x < this.screen.x && point.x > corr.x && point.x+this.screen.x > this.config.width) {
+			point.x -= this.config.width;
+		}
+
+		if (corr.y+this.screen.y > this.config.height && point.y < this.screen.y && point.y < corr.y) {
+			point.y += this.config.height;
+		} else if (corr.y < this.screen.y && point.y > corr.x && point.y+this.screen.y > this.config.height) {
+			point.y -= this.config.height;
+		}
+
+		/*if (point.x < corr.x) {
 			point.x += this.config.width;
 		} else if (point.x > this.screen.x + corr.x) {
 			point.x -= this.config.width;
@@ -215,7 +287,7 @@ class GameBasics extends Entity {
 			point.y += this.config.height;
 		} else if (point.y > this.screen.y + corr.y) {
 			point.y -= this.config.height;
-		}
+		}*/
 
 		return point.sub(corr);
 	}

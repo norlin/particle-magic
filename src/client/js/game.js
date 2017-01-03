@@ -21,6 +21,8 @@ class Game extends GameBasics {
 		this.add(this.field);
 
 		this.connect();
+
+		this.loadAssets();
 	}
 
 	fillPlayerData(player, data) {
@@ -49,6 +51,10 @@ class Game extends GameBasics {
 		this.connection = Socket();
 		this.socket = this.connection.socket;
 		this.socket.on('config', (config)=>this.init(config));
+		this.socket.on('map', (map)=>{
+			console.log('got map', map);
+			this.map = map;
+		});
 
 		this.socket.on('createPlayer', (data)=>{
 			if (this.player) {
@@ -73,6 +79,15 @@ class Game extends GameBasics {
 		});
 
 		this.socket.on('update', (data)=>{
+			this.area = data.area;
+
+			this.mapArea = {
+				left: Utils.toMapTiles(this.area.left),
+				right: Utils.toMapTiles(this.area.right),
+				top: Utils.toMapTiles(this.area.top),
+				bottom: Utils.toMapTiles(this.area.bottom)
+			};
+
 			this.player.target = new Vector(data.targetX, data.targetY);
 			this.player._position = new Vector(data.x, data.y);
 
@@ -142,6 +157,7 @@ class Game extends GameBasics {
 				id: object.id,
 				start: new Vector(object.x, object.y),
 				radius: object.data.radius,
+				radiusMin: object.data.radiusMin,
 				particle: object.data.particle
 			});
 
@@ -162,6 +178,7 @@ class Game extends GameBasics {
 		case 'cloud':
 			existing._position = new Vector(object.x, object.y);
 			existing.radius = object.data.radius;
+			existing.radiusMin = object.data.radiusMin;
 			existing.count = object.data.count;
 			existing.target = object.data.target;
 			break;
@@ -277,8 +294,65 @@ class Game extends GameBasics {
 		});
 	}
 
+	loadAssets() {
+		let grass = new Image();
+		grass.onload = ()=>{
+			this.grass = grass;
+		};
+		grass.src = '/assets/grass.png';
+	}
+
 	drawGrid() {
-		super.drawGrid();
+		if (this.mapArea && this.grass && this.map) {
+			return this.drawMap();
+		}
+
+		let size = this.options.gridSize || 32;
+		let step = new Vector(size, size);
+		let init = new Vector(-this.viewpoint.x, -this.viewpoint.y);
+
+		let ctx = this.canvas.ctx;
+
+		ctx.beginPath();
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = this.config.gridColor;
+
+		for (let x = init.x; x < this.screen.x; x += step.x) {
+			ctx.moveTo(x, 0);
+			ctx.lineTo(x, this.screen.y);
+		}
+
+		for (let y = init.y; y < this.screen.y; y += step.y) {
+			ctx.moveTo(0, y);
+			ctx.lineTo(this.screen.x, y);
+		}
+
+		ctx.stroke();
+	}
+
+	drawMap() {
+		let initX = this.mapArea.left;
+		let initY = this.mapArea.top;
+		let endX = this.mapArea.right;
+		let endY = this.mapArea.bottom;
+
+		for (let x = initX; x < endX; x += 1) {
+			let col = this.map[x];
+			let posX = x * 32;
+
+			for (let y = initY; y < endY; y += 1) {
+				let val = col[y];
+				let posY = y * 32;
+
+				let pos = this.toScreenCoords(new Vector(posX, posY));
+				//if (pos.x<0 || pos.y<0) {
+				//	console.log(`${x}x${y}`, `${posX}x${posY}`, `${pos.x}x${pos.y}`);
+				//}
+				let tile = Utils.getTile(val);
+
+				this.canvas.drawImage(this.grass, tile, pos);
+			}
+		}
 	}
 
 	onDie() {

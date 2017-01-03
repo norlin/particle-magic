@@ -1,4 +1,12 @@
 const uuidTemplate = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx';
+const tileSize = 32;
+
+const tiles = {
+	'0': [1*32, 3*32],
+	'1': [0*32, 5*32],
+	'2': [1*32, 5*32],
+	'3': [2*32, 5*32]
+};
 
 class Utils {
 	uuid() {
@@ -61,6 +69,14 @@ class Utils {
 			g: rgb.g / 255,
 			b: rgb.b / 255
 		} : null;
+	}
+
+	toMapTiles(value) {
+		return Math.floor(value / tileSize);
+	}
+
+	getTile(index) {
+		return tiles[index];
 	}
 }
 
