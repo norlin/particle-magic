@@ -105,7 +105,8 @@ grunt.initConfig({
 					cwd: 'src/',
 					src: [
 						'client/shaders/*.*',
-						'client/*.html'
+						'client/*.html',
+						'assets/*.*',
 					],
 					dest: 'build/'
 				}
@@ -164,7 +165,10 @@ grunt.initConfig({
 			},
 		},
 		html: {
-			files: ['src/client/*.html'],
+			files: [
+				'src/client/*.html',
+				'src/assets/*.*'
+			],
 			tasks: ['copy:html'],
 			options: {
 				spawn: false,

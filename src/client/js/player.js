@@ -13,6 +13,7 @@ class ClientPlayer extends Element {
 		super(game, options);
 
 		this.socket = socket;
+		this.dots = [];
 
 		this.addListeners();
 	}
@@ -35,96 +36,110 @@ class ClientPlayer extends Element {
 			this.energy = data.energy;
 		});
 
+		this.game.addMouseListener((point)=>{
+			if (!this.aim) {
+				this.launchFire();
+			}
+		}, (point)=>{
+			if (this.aim) {
+				this.launchFire();
+			}
+		});
+
+		/* move by click
 		this.game.addClickListener((point)=>{
 			this.socket.emit('setTarget', point);
 		}, true);
 
 		this.game.addClickListener((point) => {
 			this.target = new Vector(point.x, point.y);
-		}, true);
+		}, true);*/
 
 		// UP
-		this.game.addKeyListener(Keys.UP, ()=>{
+		this.game.addKeyListener([Keys.UP, Keys.W], ()=>{
 			this._keyUP = true;
 			this.setKeyboardTarget();
-		}, true);
-
-		this.game.addKeyUpListener(Keys.UP, ()=>{
+		}, ()=>{
 			this._keyUP = false;
 			this.setKeyboardTarget();
 		}, true);
 
 		// DOWN
-		this.game.addKeyListener(Keys.DOWN, ()=>{
+		this.game.addKeyListener([Keys.DOWN, Keys.S], ()=>{
 			this._keyDOWN = true;
 			this.setKeyboardTarget();
-		}, true);
-
-		this.game.addKeyUpListener(Keys.DOWN, ()=>{
+		}, ()=>{
 			this._keyDOWN = false;
 			this.setKeyboardTarget();
 		}, true);
 
 		// LEFT
-		this.game.addKeyListener(Keys.LEFT, ()=>{
+		this.game.addKeyListener([Keys.LEFT, Keys.A], ()=>{
 			this._keyLEFT = true;
 			this.setKeyboardTarget();
-		}, true);
-
-		this.game.addKeyUpListener(Keys.LEFT, ()=>{
+		}, ()=>{
 			this._keyLEFT = false;
 			this.setKeyboardTarget();
 		}, true);
 
 		// RIGHT
-		this.game.addKeyListener(Keys.RIGHT, ()=>{
+		this.game.addKeyListener([Keys.RIGHT, Keys.D], ()=>{
 			this._keyRIGHT = true;
 			this.setKeyboardTarget();
-		}, true);
-
-		this.game.addKeyUpListener(Keys.RIGHT, ()=>{
+		}, ()=>{
 			this._keyRIGHT = false;
 			this.setKeyboardTarget();
 		}, true);
 
 		// FIRE
-		this.game.addKeyListener(Keys.SPACE, (event)=>{
+		this.game.addKeyListener(Keys['1'], (event)=>{
 			if (!this.aim) {
 				this.launchFire();
 			}
-		});
-
-		this.game.addKeyUpListener(Keys.SPACE, (event)=>{
+		}, (event)=>{
 			if (this.aim) {
 				this.launchFire();
 			}
 		});
 
-		this.game.addKeyUpListener(Keys.P, (event)=>{
+		this.game.addKeyListener(Keys['2'], null, (event)=>{
+			this.setShield();
+		});
+
+		this.game.addKeyListener(Keys.P, null, (event)=>{
 			this.purgeEnergy();
 		});
 	}
 
 	setKeyboardTarget() {
 		let pos = this.pos();
+		let movement = false;
 
 		if (this._keyUP) {
+			movement = true;
 			pos.y -=  Number.MAX_VALUE;
 		}
 		if (this._keyDOWN) {
+			movement = true;
 			pos.y +=  Number.MAX_VALUE;
 		}
 		if (this._keyLEFT) {
+			movement = true;
 			pos.x -=  Number.MAX_VALUE;
 		}
 		if (this._keyRIGHT) {
+			movement = true;
 			pos.x +=  Number.MAX_VALUE;
 		}
 
-		this.socket.emit('setTarget', {
-			x: pos.x,
-			y: pos.y
-		});
+		if (movement) {
+			this.socket.emit('setTarget', {
+				x: pos.x,
+				y: pos.y
+			});
+		} else {
+			this.socket.emit('stop');
+		}
 	}
 
 	launchFire() {
@@ -145,6 +160,10 @@ class ClientPlayer extends Element {
 		let particle = new Particle({type: 'fire'});
 
 		this.aim = new Aim(this, {color: particle.color});
+	}
+
+	setShield() {
+		this.socket.emit('setShield');
 	}
 
 	purgeEnergy() {
@@ -189,6 +208,16 @@ class ClientPlayer extends Element {
 			}
 		}
 
+		this.dots.forEach((dot, i)=>{
+			if (dot.target) {
+				dot.tick();
+			} else {
+				this.dots[i] = undefined;
+			}
+		});
+
+		this.dots = this.dots.filter((dot)=>!!dot);
+
 		if (this.aim) {
 			this.aim.tick();
 		}
@@ -196,6 +225,8 @@ class ClientPlayer extends Element {
 
 	draw(canvas) {
 		super.draw(canvas);
+
+		this.dots.forEach((dot)=>dot.draw(canvas));
 
 		if (this.aim) {
 			this.aim.draw(canvas);

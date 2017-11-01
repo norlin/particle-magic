@@ -50,22 +50,15 @@ class ParticlesCloud extends Element {
 
 		this.particle = particle;
 		this.radius = options.radius;
+		this.radiusMin = options.radiusMin;
 		this.count = options.count;
 
-		this.lifetime = 50;
+		this.lifetime = this.options.lifetime || 50;
 		this.timer = 0;
 	}
 
-	density() {
-		return 1 / Math.sqrt(this.volume() / this.count);
-	}
-
-	volume() {
-		return Math.PI * Math.pow(this.radius, 2);
-	}
-
 	power() {
-		return this.particle.power * this.count;// * this.density();
+		return this.particle.power * this.count;
 	}
 
 	setTarget(direction) {
@@ -78,7 +71,6 @@ class ParticlesCloud extends Element {
 	}
 
 	blast() {
-		//this.game.remove(this.id);
 		this.emit('blast');
 		this._needRemove = true;
 	}
@@ -86,6 +78,14 @@ class ParticlesCloud extends Element {
 	tick() {
 		if (this.target) {
 			this.move();
+		}
+
+		if (this.feedTimeout) {
+			this.feedTimeout -= 1;
+			if (this.feedTimeout === 0) {
+				this.emit('collected');
+			}
+			return;
 		}
 
 		this.timer += 1;
@@ -114,15 +114,17 @@ class ParticlesCloud extends Element {
 		this.blast();
 	}
 
-	feed(amount) {
+	feed(amount, timout) {
 		this.count += amount;
 
 		this.timer = 0;
+		this.feedTimeout = timout+1;
 	}
 
 	getData() {
 		return {
 			radius: this.radius,
+			radiusMin: this.radiusMin,
 			particle: this.options.particle,
 			count: this.count,
 			target: this.target ? {

@@ -47,7 +47,8 @@ class Field extends Entity {
 					dot.setPosition({
 						x: sectorTo._position.x,
 						y: sectorTo._position.y,
-						radius: sectorTo.radius||1
+						radius: sectorTo.radius||1,
+						radiusMin: sectorTo.radiusMin
 					});
 				} else {
 					dot.setPosition(sectorTo.sector);

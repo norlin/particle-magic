@@ -21,7 +21,8 @@ class Dot extends Element {
 	getPositionBySector(sector) {
 		let x, y;
 		if (sector.radius) {
-			let distance = Utils.randomDouble(0, sector.radius);
+			let start = sector.radiusMin || 0;
+			let distance = Utils.randomDouble(start, sector.radius);
 			let angle = Utils.randomDouble(-Math.PI, Math.PI);
 
 			let pos = Vector.fromAngle(angle, distance);

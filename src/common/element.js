@@ -81,6 +81,8 @@ class Element extends Entity {
 			h: size,
 			id: this.id,
 			radius: radius,
+			type: this.type,
+			radiusMin: this.radiusMin || 0,
 			centerX: this._position.x,
 			centerY: this._position.y
 		};
