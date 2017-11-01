@@ -4,7 +4,7 @@ const config = {
 	fps: 60,
 	borderColor: '#333',
 	gridColor: '#ddd',
-	host: 'localhost',
+	host: 'norlin.guru',
 	port: 3000
 };
 
